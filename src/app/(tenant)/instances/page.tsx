@@ -80,34 +80,39 @@ export default function InstancesPage() {
       />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <CardTitle>Tenant Instances</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((item) => (
-                <div key={item} className="h-16 animate-pulse rounded-xl bg-[--surface-2]" />
+                <div key={item} className="h-16 animate-pulse rounded-xl border border-[--line] bg-[--surface-2]" />
               ))}
             </div>
           ) : instances.length === 0 ? (
-            <p className="text-sm text-[--ink-2]">No instances yet. Create your first VM.</p>
+            <div className="flex items-center justify-between rounded-xl border border-dashed border-[--line] bg-[--surface-2] px-4 py-3">
+              <p className="text-sm text-[--ink-2]">No instances yet. Create your first VM.</p>
+              <Button asChild size="sm">
+                <Link href="/instances/new">Create VM</Link>
+              </Button>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[--line] text-left text-xs uppercase tracking-[0.12em] text-[--ink-3]">
-                    <th className="px-3 py-3">Name</th>
-                    <th className="px-3 py-3">Status</th>
-                    <th className="px-3 py-3">Flavor</th>
-                    <th className="px-3 py-3">IP</th>
-                    <th className="px-3 py-3">Network</th>
-                    <th className="px-3 py-3">Actions</th>
+                  <tr className="border-b border-[--line] text-left text-xs font-semibold uppercase tracking-[0.12em] text-[--ink-3]">
+                    <th className="px-3 py-3.5">Name</th>
+                    <th className="px-3 py-3.5">Status</th>
+                    <th className="px-3 py-3.5">Flavor</th>
+                    <th className="px-3 py-3.5">IP</th>
+                    <th className="px-3 py-3.5">Network</th>
+                    <th className="px-3 py-3.5">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {instances.map((instance) => (
-                    <tr key={instance.id} className="border-b border-[--line] last:border-none">
+                    <tr key={instance.id} className="border-b border-[--line] transition-colors hover:bg-[--surface-2]/60 last:border-none">
                       <td className="px-3 py-4 font-medium text-[--ink-1]">{instance.name}</td>
                       <td className="px-3 py-4">
                         <InstanceStatusBadge status={instance.status} />
@@ -116,7 +121,7 @@ export default function InstancesPage() {
                       <td className="px-3 py-4 font-mono text-xs text-[--ink-2]">{instance.ipv4 ?? "pending"}</td>
                       <td className="px-3 py-4 text-[--ink-2]">{instance.network.name}</td>
                       <td className="px-3 py-4">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex min-w-[17rem] flex-wrap gap-2">
                           {ACTIONS.map((action) => (
                             <Button
                               key={action.key}

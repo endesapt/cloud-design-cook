@@ -84,7 +84,7 @@ export default function DashboardPage() {
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="h-44 animate-pulse rounded-2xl bg-white/80" />
+            <div key={item} className="h-44 animate-pulse rounded-2xl border border-[--line] bg-[--surface-1]" />
           ))}
         </div>
       ) : (
@@ -104,16 +104,20 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           {activity.length === 0 ? (
-            <p className="text-sm text-[--ink-2]">No activity yet.</p>
+            <div className="rounded-xl border border-dashed border-[--line] bg-[--surface-2] p-4">
+              <p className="text-sm text-[--ink-2]">No activity yet.</p>
+            </div>
           ) : (
             <ul className="space-y-3">
               {activity.slice(0, 10).map((item) => (
-                <li key={item.id} className="rounded-xl border border-[--line] bg-[--surface-2] p-3">
+                <li key={item.id} className="rounded-xl border border-[--line] bg-[--surface-2] p-3.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-mono text-xs font-semibold text-[--brand-red]">{item.action}</span>
-                    <span className="text-xs text-[--ink-3]">{new Date(item.createdAt).toLocaleString()}</span>
+                    <span className="rounded-md bg-[--brand-red-soft] px-2 py-0.5 font-mono text-xs font-semibold text-[--brand-red-strong]">
+                      {item.action}
+                    </span>
+                    <span className="text-xs font-medium text-[--ink-3]">{new Date(item.createdAt).toLocaleString()}</span>
                   </div>
-                  <p className="mt-1 text-xs text-[--ink-2]">{item.user ?? "system"}</p>
+                  <p className="mt-1 text-xs font-medium text-[--ink-2]">{item.user ?? "system"}</p>
                 </li>
               ))}
             </ul>
@@ -125,19 +129,19 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="flex items-center gap-3 pt-5">
             <Cpu className="h-5 w-5 text-[--brand-red]" />
-            <p className="text-sm text-[--ink-2]">Compute limits are enforced server-side.</p>
+            <p className="text-sm font-medium text-[--ink-2]">Compute limits are enforced server-side.</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 pt-5">
             <MemoryStick className="h-5 w-5 text-[--brand-red]" />
-            <p className="text-sm text-[--ink-2]">Mock lifecycle simulates async provisioning.</p>
+            <p className="text-sm font-medium text-[--ink-2]">Mock lifecycle simulates async provisioning.</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 pt-5">
             <HardDrive className="h-5 w-5 text-[--brand-red]" />
-            <p className="text-sm text-[--ink-2]">Operation log keeps action history for demo.</p>
+            <p className="text-sm font-medium text-[--ink-2]">Operation log keeps action history for tenant operations.</p>
           </CardContent>
         </Card>
       </div>

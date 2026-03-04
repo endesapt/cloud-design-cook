@@ -71,7 +71,7 @@ export default function AdminTenantDetailPage() {
       <PageHeader title="Edit Tenant Quotas" description="Update allocation limits" right={<LogoutButton />} />
 
       {!tenant ? (
-        <div className="h-40 animate-pulse rounded-2xl bg-white/80" />
+        <div className="h-40 animate-pulse rounded-2xl border border-[--line] bg-[--surface-1]" />
       ) : (
         <Card>
           <CardHeader>
@@ -81,7 +81,7 @@ export default function AdminTenantDetailPage() {
           </CardHeader>
           <CardContent>
             <form className="grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
-              <div className="space-y-1 md:col-span-2">
+              <div className="space-y-1.5 md:col-span-2">
                 <label className="text-sm font-medium text-[--ink-2]">Description</label>
                 <Input
                   value={tenant.description ?? ""}
@@ -89,7 +89,7 @@ export default function AdminTenantDetailPage() {
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium text-[--ink-2]">Max VMs</label>
                 <Input
                   type="number"
@@ -98,7 +98,7 @@ export default function AdminTenantDetailPage() {
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium text-[--ink-2]">Max vCPU</label>
                 <Input
                   type="number"
@@ -107,7 +107,7 @@ export default function AdminTenantDetailPage() {
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium text-[--ink-2]">Max RAM (MB)</label>
                 <Input
                   type="number"
@@ -116,7 +116,7 @@ export default function AdminTenantDetailPage() {
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium text-[--ink-2]">Max Disk (GB)</label>
                 <Input
                   type="number"
@@ -126,7 +126,7 @@ export default function AdminTenantDetailPage() {
               </div>
 
               <div className="md:col-span-2">
-                <Button type="submit" disabled={saving}>
+                <Button className="min-w-48" type="submit" disabled={saving}>
                   {saving ? "Saving..." : "Save Quotas"}
                 </Button>
               </div>

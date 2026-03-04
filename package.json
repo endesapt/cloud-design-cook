@@ -13,7 +13,10 @@
     "docs:check": "tsx scripts/docs-check.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

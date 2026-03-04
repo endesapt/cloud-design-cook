@@ -24,13 +24,17 @@ type OverviewDto = {
 
 export default function AdminOverviewPage() {
   const [data, setData] = useState<OverviewDto | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
+      setLoading(true);
       const response = await apiFetch<OverviewDto>("/api/v1/admin/overview");
       setData(response);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load admin overview");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -62,21 +66,36 @@ export default function AdminOverviewPage() {
     <div>
       <PageHeader title="Global Overview" description="Multi-tenant IaaS control plane" right={<LogoutButton />} />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard title="Tenants" description="Registered organizations" current={data?.tenantsCount ?? 0} limit={data?.tenantsCount ?? 1} />
-        <MetricCard title="Instances" description="Total instances" current={totalInstances} limit={Math.max(totalInstances, 1)} />
-        <MetricCard
-          title="Running"
-          description="Currently active instances"
-          current={data?.statusSummary.RUNNING ?? 0}
-          limit={Math.max(totalInstances, 1)}
-        />
-      </div>
+      {loading ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="h-36 animate-pulse rounded-2xl border border-[--line] bg-[--surface-1]" />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-4 md:grid-cols-3">
+            <MetricCard
+              title="Tenants"
+              description="Registered organizations"
+              current={data?.tenantsCount ?? 0}
+              limit={data?.tenantsCount ?? 1}
+            />
+            <MetricCard title="Instances" description="Total instances" current={totalInstances} limit={Math.max(totalInstances, 1)} />
+            <MetricCard
+              title="Running"
+              description="Currently active instances"
+              current={data?.statusSummary.RUNNING ?? 0}
+              limit={Math.max(totalInstances, 1)}
+            />
+          </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <StatusPie data={statusData} />
-        <FlavorBar data={flavorData} />
-      </div>
+          <div className="mt-6 grid gap-6 xl:grid-cols-2">
+            <StatusPie data={statusData} />
+            <FlavorBar data={flavorData} />
+          </div>
+        </>
+      )}
 
       <Card className="mt-6">
         <CardHeader>
@@ -84,16 +103,20 @@ export default function AdminOverviewPage() {
         </CardHeader>
         <CardContent>
           {!data?.recentOperations?.length ? (
-            <p className="text-sm text-[--ink-2]">No recent operations.</p>
+            <p className="rounded-xl border border-dashed border-[--line] bg-[--surface-2] px-3 py-2 text-sm text-[--ink-2]">
+              No recent operations.
+            </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {data.recentOperations.map((event) => (
-                <div key={event.id} className="rounded-xl border border-[--line] bg-[--surface-2] p-3 text-sm">
+                <div key={event.id} className="rounded-xl border border-[--line] bg-[--surface-2] p-3.5 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-mono text-xs font-semibold text-[--brand-red]">{event.action}</span>
-                    <span className="text-xs text-[--ink-3]">{new Date(event.createdAt).toLocaleString()}</span>
+                    <span className="rounded-md bg-[--brand-red-soft] px-2 py-0.5 font-mono text-xs font-semibold text-[--brand-red-strong]">
+                      {event.action}
+                    </span>
+                    <span className="text-xs font-medium text-[--ink-3]">{new Date(event.createdAt).toLocaleString()}</span>
                   </div>
-                  <p className="mt-1 text-xs text-[--ink-2]">
+                  <p className="mt-1 text-xs font-medium text-[--ink-2]">
                     tenant: {event.tenant ?? "-"} | user: {event.user ?? "-"}
                   </p>
                 </div>

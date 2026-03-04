@@ -13,7 +13,7 @@ import type { FlavorDto, NetworkDto, SecurityGroupDto } from "@/lib/types";
 
 export default function NewInstancePage() {
   const router = useRouter();
-  const [name, setName] = useState("vm-demo-1");
+  const [name, setName] = useState("vm-core-1");
   const [flavorId, setFlavorId] = useState("");
   const [networkId, setNetworkId] = useState("");
   const [securityGroupIds, setSecurityGroupIds] = useState<string[]>([]);
@@ -21,6 +21,8 @@ export default function NewInstancePage() {
   const [networks, setNetworks] = useState<NetworkDto[]>([]);
   const [groups, setGroups] = useState<SecurityGroupDto[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const selectClassName =
+    "h-10 w-full rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1] shadow-sm outline-none transition focus:border-[--brand-red] focus:ring-2 focus:ring-[--brand-red-soft]";
 
   useEffect(() => {
     void loadOptions();
@@ -74,13 +76,13 @@ export default function NewInstancePage() {
       <PageHeader title="Create Instance" description="Provision a new mock VM with tenant network policy" right={<LogoutButton />} />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <CardTitle>Provision VM</CardTitle>
           <CardDescription>Quota and ownership checks are enforced server-side.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={onSubmit}>
-            <div className="space-y-1">
+          <form className="space-y-5" onSubmit={onSubmit}>
+            <div className="space-y-1.5">
               <label className="text-sm font-medium text-[--ink-2]" htmlFor="name">
                 Instance Name
               </label>
@@ -94,7 +96,7 @@ export default function NewInstancePage() {
                 </label>
                 <select
                   id="flavor"
-                  className="h-10 w-full rounded-xl border border-[--line] bg-white px-3 text-sm"
+                  className={selectClassName}
                   value={flavorId}
                   onChange={(e) => setFlavorId(e.target.value)}
                 >
@@ -112,7 +114,7 @@ export default function NewInstancePage() {
                 </label>
                 <select
                   id="network"
-                  className="h-10 w-full rounded-xl border border-[--line] bg-white px-3 text-sm"
+                  className={selectClassName}
                   value={networkId}
                   onChange={(e) => setNetworkId(e.target.value)}
                 >
@@ -131,7 +133,10 @@ export default function NewInstancePage() {
                 {groups.map((group) => {
                   const checked = securityGroupIds.includes(group.id);
                   return (
-                    <label key={group.id} className="flex items-center gap-2 rounded-lg border border-[--line] bg-[--surface-2] px-3 py-2">
+                    <label
+                      key={group.id}
+                      className="flex items-center gap-2 rounded-lg border border-[--line] bg-[--surface-2] px-3 py-2 transition-colors hover:border-[--line-strong]"
+                    >
                       <input
                         type="checkbox"
                         checked={checked}
@@ -149,7 +154,7 @@ export default function NewInstancePage() {
               </div>
             </div>
 
-            <Button disabled={submitting} type="submit">
+            <Button className="min-w-48" disabled={submitting} type="submit">
               {submitting ? "Creating..." : "Create Instance"}
             </Button>
           </form>

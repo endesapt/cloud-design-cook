@@ -15,28 +15,42 @@ Conceptual multi-tenant IaaS platform MVP with:
 - Docker Engine (optional but recommended for VM emulation)
 
 ## Quick Start
-1. Install dependencies:
+1. Use Node.js `24.14.0` via nvm:
+```bash
+source ~/.nvm/nvm.sh
+nvm use
+```
+2. Install dependencies:
 ```bash
 npm install
 ```
-2. Create env file:
+3. Create env file:
 ```bash
 cp .env.example .env
 ```
-3. Ensure Docker daemon is running if `PROVISION_MODE=docker`.
-4. Generate Prisma client:
+4. Start PostgreSQL container:
+```bash
+npm run db:up
+```
+5. Ensure Docker daemon is running if `PROVISION_MODE=docker`.
+6. Generate Prisma client:
 ```bash
 npm run db:generate
 ```
-5. Run migrations and seed:
+7. Run migrations and seed:
 ```bash
 npm run db:migrate
 npm run db:seed
 ```
-6. Start app:
+8. Start app:
 ```bash
 npm run dev
 ```
+
+## Database Commands
+- `npm run db:up` - start local PostgreSQL (`docker compose up -d postgres`)
+- `npm run db:down` - stop compose stack
+- `npm run db:logs` - stream PostgreSQL logs
 
 ## Provisioning Modes
 - `PROVISION_MODE=docker`: instance create/action controls a real Docker container.
@@ -47,7 +61,7 @@ Default `.env.example` is Docker mode with low per-instance runtime limits:
 - `DOCKER_MIN_MEMORY_MB=64`
 - `DOCKER_PIDS_LIMIT=64`
 
-This keeps host usage low so multiple demo VMs can run simultaneously.
+This keeps host usage low so multiple VMs can run simultaneously.
 
 ## Seed Users
 - `admin@cloud.local / ChangeMe123!` (global admin)
@@ -60,6 +74,28 @@ This keeps host usage low so multiple demo VMs can run simultaneously.
 - `npm run test`
 - `npm run test:e2e`
 - `npm run docs:check`
+
+## Troubleshooting
+- `node: command not found`:
+```bash
+source ~/.nvm/nvm.sh
+nvm use 24
+```
+- `npm run dev` exits immediately with no error:
+```bash
+source ~/.nvm/nvm.sh
+nvm use 24
+rm -rf node_modules
+npm ci
+npm run dev
+```
+- UI shows `Failed to fetch` on API calls:
+```bash
+npm run db:up
+npm run db:migrate
+npm run db:seed
+```
+Then restart `npm run dev` and log in again.
 
 ## Docs
 Start from [docs/index.md](./docs/index.md).

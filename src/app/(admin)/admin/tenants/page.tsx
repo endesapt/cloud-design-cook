@@ -18,13 +18,17 @@ function ratio(current: number, max: number) {
 
 export default function AdminTenantsPage() {
   const [tenants, setTenants] = useState<TenantSummaryDto[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
+      setLoading(true);
       const data = await apiFetch<TenantSummaryDto[]>("/api/v1/admin/tenants");
       setTenants(data);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load tenants");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -41,8 +45,16 @@ export default function AdminTenantsPage() {
           <CardTitle>Tenant Resource Allocation</CardTitle>
         </CardHeader>
         <CardContent>
-          {tenants.length === 0 ? (
-            <p className="text-sm text-[--ink-2]">No tenants found.</p>
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="h-28 animate-pulse rounded-xl border border-[--line] bg-[--surface-2]" />
+              ))}
+            </div>
+          ) : tenants.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-[--line] bg-[--surface-2] px-3 py-2 text-sm text-[--ink-2]">
+              No tenants found.
+            </p>
           ) : (
             <div className="space-y-4">
               {tenants.map((tenant) => (

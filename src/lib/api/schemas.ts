@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+const resourceIdSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu, "Invalid identifier format");
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -29,9 +33,9 @@ export const createSecurityGroupRuleSchema = z.object({
 
 export const createInstanceSchema = z.object({
   name: z.string().min(2).max(80),
-  flavorId: z.string().uuid(),
-  networkId: z.string().uuid(),
-  securityGroupIds: z.array(z.string().uuid()).min(1),
+  flavorId: resourceIdSchema,
+  networkId: resourceIdSchema,
+  securityGroupIds: z.array(resourceIdSchema).min(1),
 });
 
 export const instanceActionSchema = z.object({

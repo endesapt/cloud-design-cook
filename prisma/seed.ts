@@ -5,6 +5,8 @@ const prisma = new PrismaClient();
 
 async function main() {
   const password = await bcrypt.hash("ChangeMe123!", 10);
+  const seedInstanceId = "00000000-0000-0000-0000-0000000000b1";
+  const seedOperationId = "00000000-0000-0000-0000-0000000000c1";
 
   const [alpha, beta] = await Promise.all([
     prisma.tenant.upsert({
@@ -13,7 +15,7 @@ async function main() {
       create: {
         name: "Alpha Corp",
         slug: "alpha-corp",
-        description: "Primary tenant for demo",
+        description: "Primary tenant environment",
         maxVms: 3,
         maxVcpus: 8,
         maxRamMb: 16384,
@@ -105,34 +107,63 @@ async function main() {
     },
   });
 
-  const alphaDefaultSg = await prisma.securityGroup.create({
-    data: {
-      tenantId: alpha.id,
-      name: `default-${Date.now()}`,
-      description: "Default SG for seed",
-      rules: {
-        create: [
-          {
-            direction: RuleDirection.ingress,
-            protocol: "tcp",
-            portFrom: 22,
-            portTo: 22,
-            cidr: "0.0.0.0/0",
-          },
-          {
-            direction: RuleDirection.ingress,
-            protocol: "tcp",
-            portFrom: 443,
-            portTo: 443,
-            cidr: "0.0.0.0/0",
-          },
-        ],
+  const alphaDefaultSg = await prisma.securityGroup.upsert({
+    where: {
+      tenantId_name: {
+        tenantId: alpha.id,
+        name: "default",
       },
+    },
+    update: {
+      description: "Default SG for seed",
+    },
+    create: {
+      tenantId: alpha.id,
+      name: "default",
+      description: "Default SG for seed",
     },
   });
 
-  const seedInstance = await prisma.instance.create({
-    data: {
+  await prisma.securityGroupRule.deleteMany({
+    where: { securityGroupId: alphaDefaultSg.id },
+  });
+
+  await prisma.securityGroupRule.createMany({
+    data: [
+      {
+        securityGroupId: alphaDefaultSg.id,
+        direction: RuleDirection.ingress,
+        protocol: "tcp",
+        portFrom: 22,
+        portTo: 22,
+        cidr: "0.0.0.0/0",
+      },
+      {
+        securityGroupId: alphaDefaultSg.id,
+        direction: RuleDirection.ingress,
+        protocol: "tcp",
+        portFrom: 443,
+        portTo: 443,
+        cidr: "0.0.0.0/0",
+      },
+    ],
+  });
+
+  const seedInstance = await prisma.instance.upsert({
+    where: { id: seedInstanceId },
+    update: {
+      tenantId: alpha.id,
+      name: "alpha-web-1",
+      flavorId: medium.id,
+      networkId: alphaNetwork.id,
+      status: InstanceStatus.RUNNING,
+      ipv4: "10.10.0.11",
+      mockRef: "mock-seed-1",
+      readyAt: null,
+      failReason: null,
+    },
+    create: {
+      id: seedInstanceId,
       tenantId: alpha.id,
       name: "alpha-web-1",
       flavorId: medium.id,
@@ -143,20 +174,35 @@ async function main() {
     },
   });
 
-  await prisma.instanceSecurityGroup.create({
-    data: {
+  await prisma.instanceSecurityGroup.upsert({
+    where: {
+      instanceId_securityGroupId: {
+        instanceId: seedInstance.id,
+        securityGroupId: alphaDefaultSg.id,
+      },
+    },
+    update: {},
+    create: {
       instanceId: seedInstance.id,
       securityGroupId: alphaDefaultSg.id,
     },
   });
 
-  await prisma.operationLog.create({
-    data: {
+  await prisma.operationLog.upsert({
+    where: { id: seedOperationId },
+    update: {
+      details: {
+        message: "Seeded instance",
+        instanceId: seedInstance.id,
+      },
+    },
+    create: {
+      id: seedOperationId,
       tenantId: alpha.id,
       userId: alphaAdmin.id,
       action: OperationAction.CREATE_INSTANCE,
       details: {
-        message: "Seeded instance for demo",
+        message: "Seeded instance",
         instanceId: seedInstance.id,
       },
     },

@@ -86,14 +86,14 @@ export default function NetworkPage() {
     <div>
       <PageHeader title="Networks & Security Groups" description="Logical VPC isolation and policy rules" right={<LogoutButton />} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CardTitle>Networks</CardTitle>
             <CardDescription>Create tenant-isolated virtual networks.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form className="space-y-2" onSubmit={createNetwork}>
+            <form className="grid gap-2 md:grid-cols-[1fr_1fr_auto]" onSubmit={createNetwork}>
               <Input placeholder="Name" value={networkName} onChange={(e) => setNetworkName(e.target.value)} />
               <Input placeholder="CIDR" value={networkCidr} onChange={(e) => setNetworkCidr(e.target.value)} />
               <Button type="submit">Create Network</Button>
@@ -101,12 +101,14 @@ export default function NetworkPage() {
 
             <div className="space-y-2">
               {loading ? (
-                <div className="h-20 animate-pulse rounded-xl bg-[--surface-2]" />
+                <div className="h-20 animate-pulse rounded-xl border border-[--line] bg-[--surface-2]" />
               ) : networks.length === 0 ? (
-                <p className="text-sm text-[--ink-2]">No networks yet.</p>
+                <p className="rounded-xl border border-dashed border-[--line] bg-[--surface-2] px-3 py-2 text-sm text-[--ink-2]">
+                  No networks yet.
+                </p>
               ) : (
                 networks.map((network) => (
-                  <div key={network.id} className="rounded-xl border border-[--line] bg-[--surface-2] p-3">
+                  <div key={network.id} className="rounded-xl border border-[--line] bg-[--surface-2] p-3.5">
                     <p className="font-medium text-[--ink-1]">{network.name}</p>
                     <p className="font-mono text-xs text-[--ink-2]">{network.cidr}</p>
                   </div>
@@ -117,25 +119,27 @@ export default function NetworkPage() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CardTitle>Security Groups</CardTitle>
             <CardDescription>Attach inbound/outbound policy to instances.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form className="space-y-2" onSubmit={createSecurityGroup}>
+            <form className="grid gap-2 md:grid-cols-[1fr_auto]" onSubmit={createSecurityGroup}>
               <Input placeholder="Group name" value={groupName} onChange={(e) => setGroupName(e.target.value)} />
               <Button type="submit">Create Group</Button>
             </form>
 
             <div className="space-y-3">
               {loading ? (
-                <div className="h-20 animate-pulse rounded-xl bg-[--surface-2]" />
+                <div className="h-20 animate-pulse rounded-xl border border-[--line] bg-[--surface-2]" />
               ) : groups.length === 0 ? (
-                <p className="text-sm text-[--ink-2]">No security groups yet.</p>
+                <p className="rounded-xl border border-dashed border-[--line] bg-[--surface-2] px-3 py-2 text-sm text-[--ink-2]">
+                  No security groups yet.
+                </p>
               ) : (
                 groups.map((group) => (
-                  <div key={group.id} className="space-y-2 rounded-xl border border-[--line] bg-[--surface-2] p-3">
-                    <div className="flex items-center justify-between">
+                  <div key={group.id} className="space-y-2 rounded-xl border border-[--line] bg-[--surface-2] p-3.5">
+                    <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="font-medium text-[--ink-1]">{group.name}</p>
                         <p className="text-xs text-[--ink-2]">{group.description ?? "No description"}</p>
@@ -162,7 +166,7 @@ export default function NetworkPage() {
                         <p className="text-xs text-[--ink-2]">No rules.</p>
                       ) : (
                         group.rules.map((rule) => (
-                          <p key={rule.id} className="font-mono text-xs text-[--ink-2]">
+                          <p key={rule.id} className="font-mono text-xs font-medium text-[--ink-2]">
                             {rule.direction} {rule.protocol} {rule.portFrom ?? "*"}-{rule.portTo ?? "*"} {rule.cidr}
                           </p>
                         ))
