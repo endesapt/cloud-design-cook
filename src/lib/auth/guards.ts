@@ -21,8 +21,24 @@ export function requireRole(request: NextRequest, roles: UserRole[]) {
 
 export function requireTenantContext(request: NextRequest) {
   const session = requireSession(request);
-  if (!session.tenantId && session.role !== "global_admin") {
+  if (!session.tenantId && !["global_admin", "support_viewer"].includes(session.role)) {
     throw new ForbiddenError("Tenant context is missing");
   }
   return session;
+}
+
+export function requireAdminRead(request: NextRequest) {
+  return requireRole(request, ["global_admin", "support_viewer"]);
+}
+
+export function requireAdminWrite(request: NextRequest) {
+  return requireRole(request, ["global_admin"]);
+}
+
+export function requireTenantRead(request: NextRequest) {
+  return requireRole(request, ["global_admin", "support_viewer", "tenant_admin", "tenant_user"]);
+}
+
+export function requireTenantWrite(request: NextRequest) {
+  return requireRole(request, ["global_admin", "tenant_admin"]);
 }

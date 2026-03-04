@@ -63,10 +63,16 @@ export default function AdminTenantsPage() {
                     <div>
                       <p className="text-lg font-semibold text-[--ink-1]">{tenant.name}</p>
                       <p className="font-mono text-xs text-[--ink-3]">{tenant.slug}</p>
+                      <p className="text-xs font-medium text-[--ink-2]">status: {tenant.status}</p>
                     </div>
-                    <Button asChild variant="secondary" size="sm">
-                      <Link href={`/admin/tenants/${tenant.id}`}>Edit Quotas</Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button asChild variant="secondary" size="sm">
+                        <Link href={`/admin/support/${tenant.id}/instances`}>Support View</Link>
+                      </Button>
+                      <Button asChild variant="secondary" size="sm">
+                        <Link href={`/admin/tenants/${tenant.id}`}>Edit Quotas</Link>
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-2">

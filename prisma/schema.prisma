@@ -9,8 +9,14 @@ datasource db {
 
 enum UserRole {
   global_admin
+  support_viewer
   tenant_admin
   tenant_user
+}
+
+enum TenantStatus {
+  ACTIVE
+  DELETING
 }
 
 enum InstanceStatus {
@@ -33,10 +39,17 @@ enum OperationAction {
   LOGIN
   LOGOUT
   CREATE_INSTANCE
+  UPDATE_INSTANCE
   INSTANCE_ACTION
   CREATE_NETWORK
   CREATE_SECURITY_GROUP
+  CREATE_USER
+  UPDATE_USER
+  DELETE_USER
+  RESET_USER_PASSWORD
   UPDATE_TENANT_QUOTA
+  DELETE_TENANT
+  FORCE_DELETE_TENANT
 }
 
 model Tenant {
@@ -44,6 +57,7 @@ model Tenant {
   name        String
   slug        String          @unique
   description String?
+  status      TenantStatus    @default(ACTIVE)
   maxVms      Int             @default(3)
   maxVcpus    Int             @default(6)
   maxRamMb    Int             @default(12288)

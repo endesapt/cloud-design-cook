@@ -1,4 +1,4 @@
-import type { InstanceStatus, UserRole } from "@prisma/client";
+import type { InstanceStatus, TenantStatus, UserRole } from "@prisma/client";
 
 export type AuthMe = {
   id: string;
@@ -58,6 +58,7 @@ export type TenantSummaryDto = {
   name: string;
   slug: string;
   description: string | null;
+  status: TenantStatus;
   quotas: {
     maxVms: number;
     maxVcpus: number;
@@ -70,4 +71,14 @@ export type TenantSummaryDto = {
     usedRamMb: number;
     usedDiskGb: number;
   };
+};
+
+export type UserDto = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+  tenantId: string | null;
+  createdAt: string;
+  updatedAt: string;
 };

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { InstanceStatus } from "@prisma/client";
-import { Play, Square, RotateCcw, Trash2, Plus } from "lucide-react";
+import { Play, Square, RotateCcw, Trash2, Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,10 @@ function isActionAllowed(status: InstanceStatus, action: ActionKey) {
   }
 
   return false;
+}
+
+function isEditAllowed(status: InstanceStatus) {
+  return !TRANSITION_STATUSES.includes(status);
 }
 
 export default function InstancesPage() {
@@ -179,6 +183,19 @@ export default function InstancesPage() {
                         <td className="px-3 py-4 text-[--ink-2]">{instance.network.name}</td>
                         <td className="px-3 py-4">
                           <div className="flex min-w-[17rem] flex-wrap gap-2">
+                            {isEditAllowed(instance.status) ? (
+                              <Button asChild size="sm" variant="secondary">
+                                <Link href={`/instances/${instance.id}/edit`}>
+                                  <Pencil className="mr-1 h-3.5 w-3.5" />
+                                  Edit
+                                </Link>
+                              </Button>
+                            ) : (
+                              <Button size="sm" variant="secondary" disabled>
+                                <Pencil className="mr-1 h-3.5 w-3.5" />
+                                Edit
+                              </Button>
+                            )}
                             {ACTIONS.map((action) => (
                               <Button
                                 key={action.key}

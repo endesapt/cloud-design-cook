@@ -3,8 +3,8 @@ import { prisma } from "@/lib/db/prisma";
 import { apiError, apiOk } from "@/lib/api/http";
 import { parseJson } from "@/lib/api/parse";
 import { createSecurityGroupRuleSchema } from "@/lib/api/schemas";
-import { requireTenantContext } from "@/lib/auth/guards";
-import { resolveTenantScope } from "@/lib/tenant/scope";
+import { requireTenantWrite } from "@/lib/auth/guards";
+import { assertTenantIsAccessible, resolveTenantScope } from "@/lib/tenant/scope";
 import { AppError, NotFoundError } from "@/lib/errors/app-error";
 import { hasDuplicateRule, validateRulePortRange } from "@/lib/security-groups/rules";
 
@@ -15,8 +15,9 @@ type Params = {
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id, ruleId } = await params;
-    const session = requireTenantContext(request);
+    const session = requireTenantWrite(request);
     const tenantId = resolveTenantScope(session, request.nextUrl.searchParams.get("tenantId"));
+    await assertTenantIsAccessible(session, tenantId);
     const body = await parseJson(request, createSecurityGroupRuleSchema);
 
     validateRulePortRange({
@@ -83,8 +84,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { id, ruleId } = await params;
-    const session = requireTenantContext(request);
+    const session = requireTenantWrite(request);
     const tenantId = resolveTenantScope(session, request.nextUrl.searchParams.get("tenantId"));
+    await assertTenantIsAccessible(session, tenantId);
 
     const sg = await prisma.securityGroup.findFirst({
       where: { id, tenantId },

@@ -4,8 +4,8 @@ import { prisma } from "@/lib/db/prisma";
 import { apiError, apiOk } from "@/lib/api/http";
 import { parseJson } from "@/lib/api/parse";
 import { createInstanceSchema } from "@/lib/api/schemas";
-import { requireTenantContext } from "@/lib/auth/guards";
-import { resolveTenantScope } from "@/lib/tenant/scope";
+import { requireTenantRead, requireTenantWrite } from "@/lib/auth/guards";
+import { assertTenantIsAccessible, resolveTenantScope } from "@/lib/tenant/scope";
 import { checkQuotaBeforeCreate } from "@/lib/quota/enforce";
 import { ensureNetworkBelongsToTenant, ensureSecurityGroupsBelongToTenant } from "@/lib/tenant/ownership";
 import {
@@ -27,8 +27,9 @@ function parseStatus(raw: string | null): StatusQuery {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = requireTenantContext(request);
+    const session = requireTenantRead(request);
     const tenantId = resolveTenantScope(session, request.nextUrl.searchParams.get("tenantId"));
+    await assertTenantIsAccessible(session, tenantId);
     const status = parseStatus(request.nextUrl.searchParams.get("status"));
 
     await reconcileInstancesForTenant(tenantId);
@@ -58,8 +59,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = requireTenantContext(request);
+    const session = requireTenantWrite(request);
     const tenantId = resolveTenantScope(session, request.nextUrl.searchParams.get("tenantId"));
+    await assertTenantIsAccessible(session, tenantId);
     const body = await parseJson(request, createInstanceSchema);
 
     await ensureNetworkBelongsToTenant(body.networkId, tenantId);

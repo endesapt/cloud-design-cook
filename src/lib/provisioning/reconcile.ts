@@ -243,6 +243,16 @@ async function finalizeTerminating(instance: { id: string; mockRef: string | nul
   await prisma.instance.delete({ where: { id: instance.id } });
 }
 
+async function finalizeDeletingTenant(tenantId: string) {
+  await prisma.user.deleteMany({
+    where: { tenantId },
+  });
+
+  await prisma.tenant.delete({
+    where: { id: tenantId },
+  });
+}
+
 export async function reconcileInstancesForTenant(tenantId: string) {
   const now = new Date();
 
@@ -308,7 +318,38 @@ export async function reconcileInstancesGlobal() {
     total += await reconcileInstancesForTenant(tenant.tenantId);
   }
 
+  total += await reconcileDeletingTenants();
+
   return total;
+}
+
+export async function reconcileDeletingTenants() {
+  const deletingTenants = await prisma.tenant.findMany({
+    where: { status: "DELETING" },
+    select: { id: true },
+  });
+
+  if (!deletingTenants.length) {
+    return 0;
+  }
+
+  let processed = 0;
+  for (const tenant of deletingTenants) {
+    await reconcileInstancesForTenant(tenant.id);
+
+    const instancesLeft = await prisma.instance.count({
+      where: { tenantId: tenant.id },
+    });
+
+    if (instancesLeft > 0) {
+      continue;
+    }
+
+    await finalizeDeletingTenant(tenant.id);
+    processed += 1;
+  }
+
+  return processed;
 }
 
 export function nextStatusForAction(currentStatus: InstanceStatus, action: "start" | "stop" | "reboot" | "delete") {

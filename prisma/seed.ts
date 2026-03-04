@@ -37,7 +37,7 @@ async function main() {
     }),
   ]);
 
-  const [globalAdmin, alphaAdmin, betaAdmin] = await Promise.all([
+  const [globalAdmin, supportViewer, alphaAdmin, alphaViewer, betaAdmin] = await Promise.all([
     prisma.user.upsert({
       where: { email: "admin@cloud.local" },
       update: {
@@ -51,6 +51,18 @@ async function main() {
       },
     }),
     prisma.user.upsert({
+      where: { email: "support@cloud.local" },
+      update: {
+        passwordHash: password,
+      },
+      create: {
+        email: "support@cloud.local",
+        passwordHash: password,
+        fullName: "Support Viewer",
+        role: UserRole.support_viewer,
+      },
+    }),
+    prisma.user.upsert({
       where: { email: "owner@alpha.local" },
       update: {
         passwordHash: password,
@@ -60,6 +72,19 @@ async function main() {
         passwordHash: password,
         fullName: "Alpha Owner",
         role: UserRole.tenant_admin,
+        tenantId: alpha.id,
+      },
+    }),
+    prisma.user.upsert({
+      where: { email: "viewer@alpha.local" },
+      update: {
+        passwordHash: password,
+      },
+      create: {
+        email: "viewer@alpha.local",
+        passwordHash: password,
+        fullName: "Alpha Viewer",
+        role: UserRole.tenant_user,
         tenantId: alpha.id,
       },
     }),
@@ -209,7 +234,7 @@ async function main() {
   });
 
   console.log("Seed completed", {
-    users: [globalAdmin.email, alphaAdmin.email, betaAdmin.email],
+    users: [globalAdmin.email, supportViewer.email, alphaAdmin.email, alphaViewer.email, betaAdmin.email],
     flavors: [small.name, medium.name, large.name],
   });
 }

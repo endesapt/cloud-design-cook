@@ -4,7 +4,8 @@ import { prisma } from "@/lib/db/prisma";
 import { apiError, apiOk } from "@/lib/api/http";
 import { parseJson } from "@/lib/api/parse";
 import { createTenantSchema } from "@/lib/api/schemas";
-import { requireRole } from "@/lib/auth/guards";
+import { requireAdminRead, requireAdminWrite } from "@/lib/auth/guards";
+import { reconcileDeletingTenants } from "@/lib/provisioning/reconcile";
 
 const usageStatuses: InstanceStatus[] = [
   InstanceStatus.CREATING,
@@ -37,7 +38,8 @@ function summarizeUsage(
 
 export async function GET(request: NextRequest) {
   try {
-    requireRole(request, ["global_admin"]);
+    requireAdminRead(request);
+    await reconcileDeletingTenants();
 
     const tenants = await prisma.tenant.findMany({
       include: {
@@ -62,6 +64,7 @@ export async function GET(request: NextRequest) {
       name: tenant.name,
       slug: tenant.slug,
       description: tenant.description,
+      status: tenant.status,
       quotas: {
         maxVms: tenant.maxVms,
         maxVcpus: tenant.maxVcpus,
@@ -81,7 +84,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    requireRole(request, ["global_admin"]);
+    requireAdminWrite(request);
     const body = await parseJson(request, createTenantSchema);
 
     const tenant = await prisma.tenant.create({

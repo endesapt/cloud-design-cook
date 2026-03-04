@@ -12,5 +12,9 @@ export default async function HomePage() {
     redirect("/admin/overview");
   }
 
+  if (session.role === "support_viewer") {
+    redirect("/admin/support");
+  }
+
   redirect("/dashboard");
 }

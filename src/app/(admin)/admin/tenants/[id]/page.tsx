@@ -15,6 +15,7 @@ type TenantDto = {
   name: string;
   slug: string;
   description: string | null;
+  status: "ACTIVE" | "DELETING";
   maxVms: number;
   maxVcpus: number;
   maxRamMb: number;
@@ -26,6 +27,8 @@ export default function AdminTenantDetailPage() {
   const router = useRouter();
   const [tenant, setTenant] = useState<TenantDto | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmInput, setConfirmInput] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -66,6 +69,50 @@ export default function AdminTenantDetailPage() {
     }
   }
 
+  async function onSafeDelete() {
+    if (!tenant) return;
+
+    const confirmed = window.confirm(
+      "Safe delete works only for empty tenant. Continue precheck delete?",
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+      await apiFetch(`/api/v1/admin/tenants/${tenant.id}`, {
+        method: "DELETE",
+      });
+      toast.success("Tenant deleted");
+      router.replace("/admin/tenants");
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Tenant delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function onForceDelete() {
+    if (!tenant) return;
+    if (confirmInput !== tenant.slug) {
+      toast.error(`Type tenant slug (${tenant.slug}) to confirm force delete`);
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await apiFetch(`/api/v1/admin/tenants/${tenant.id}?force=true`, {
+        method: "DELETE",
+      });
+      toast.success("Tenant force deletion queued");
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Force delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div>
       <PageHeader title="Edit Tenant Quotas" description="Update allocation limits" right={<LogoutButton />} />
@@ -73,11 +120,13 @@ export default function AdminTenantDetailPage() {
       {!tenant ? (
         <div className="h-40 animate-pulse rounded-2xl border border-[--line] bg-[--surface-1]" />
       ) : (
-        <Card>
+        <>
+          <Card>
           <CardHeader>
             <CardTitle>
               {tenant.name} <span className="font-mono text-xs text-[--ink-3]">({tenant.slug})</span>
             </CardTitle>
+            <p className="text-xs font-medium text-[--ink-2]">Status: {tenant.status}</p>
           </CardHeader>
           <CardContent>
             <form className="grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
@@ -132,7 +181,41 @@ export default function AdminTenantDetailPage() {
               </div>
             </form>
           </CardContent>
-        </Card>
+          </Card>
+
+          <Card className="mt-6 border-red-200">
+          <CardHeader>
+            <CardTitle>Danger Zone</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-[--ink-2]">
+              Safe delete works only for an empty tenant. Force delete sets tenant to DELETING and asynchronously terminates all tenant instances.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="destructive" disabled={deleting || tenant.status === "DELETING"} onClick={onSafeDelete}>
+                Safe Delete
+              </Button>
+            </div>
+
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3">
+              <p className="text-sm font-medium text-red-900">
+                Force Delete Confirmation
+              </p>
+              <p className="mt-1 text-xs text-red-800">Type slug: {tenant.slug}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Input value={confirmInput} onChange={(event) => setConfirmInput(event.target.value)} placeholder={tenant.slug} />
+                <Button
+                  variant="destructive"
+                  disabled={deleting || tenant.status === "DELETING"}
+                  onClick={onForceDelete}
+                >
+                  Force Delete
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+          </Card>
+        </>
       )}
     </div>
   );

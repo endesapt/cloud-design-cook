@@ -27,6 +27,8 @@ export default function LoginPage() {
 
       if (data.user.role === "global_admin") {
         router.replace("/admin/overview");
+      } else if (data.user.role === "support_viewer") {
+        router.replace("/admin/support");
       } else {
         router.replace("/dashboard");
       }
@@ -76,6 +78,7 @@ export default function LoginPage() {
             <p className="font-semibold uppercase tracking-[0.08em] text-[--ink-3]">Seed Accounts</p>
             <div className="mt-1 font-mono text-[--ink-2]">owner@alpha.local / ChangeMe123!</div>
             <div className="font-mono text-[--ink-2]">admin@cloud.local / ChangeMe123!</div>
+            <div className="font-mono text-[--ink-2]">support@cloud.local / ChangeMe123!</div>
           </div>
         </CardContent>
       </Card>

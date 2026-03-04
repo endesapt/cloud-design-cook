@@ -4,9 +4,9 @@ import { prisma } from "@/lib/db/prisma";
 import { apiError, apiOk } from "@/lib/api/http";
 import { parseJson } from "@/lib/api/parse";
 import { instanceActionSchema } from "@/lib/api/schemas";
-import { requireTenantContext } from "@/lib/auth/guards";
+import { requireTenantWrite } from "@/lib/auth/guards";
 import { config } from "@/lib/config";
-import { assertTenantOwnership } from "@/lib/tenant/scope";
+import { assertTenantIsAccessible, assertTenantOwnership } from "@/lib/tenant/scope";
 import { checkQuotaBeforeStart } from "@/lib/quota/enforce";
 import {
   dockerProvisioningEnabled,
@@ -26,7 +26,7 @@ type Params = {
 export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const session = requireTenantContext(request);
+    const session = requireTenantWrite(request);
     const body = await parseJson(request, instanceActionSchema);
 
     const instance = await prisma.instance.findUnique({
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     assertTenantOwnership(session, instance.tenantId);
+    await assertTenantIsAccessible(session, instance.tenantId);
     await reconcileInstancesForTenant(instance.tenantId);
 
     const fresh = await prisma.instance.findUnique({ where: { id } });

@@ -3,15 +3,16 @@ import { prisma } from "@/lib/db/prisma";
 import { apiError, apiOk } from "@/lib/api/http";
 import { parseJson } from "@/lib/api/parse";
 import { createNetworkSchema } from "@/lib/api/schemas";
-import { requireTenantContext } from "@/lib/auth/guards";
-import { resolveTenantScope } from "@/lib/tenant/scope";
+import { requireTenantRead, requireTenantWrite } from "@/lib/auth/guards";
+import { assertTenantIsAccessible, resolveTenantScope } from "@/lib/tenant/scope";
 import { writeOperationLog } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = requireTenantContext(request);
+    const session = requireTenantRead(request);
     const tenantIdFromQuery = request.nextUrl.searchParams.get("tenantId");
     const tenantId = resolveTenantScope(session, tenantIdFromQuery);
+    await assertTenantIsAccessible(session, tenantId);
 
     const networks = await prisma.network.findMany({
       where: { tenantId },
@@ -26,9 +27,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = requireTenantContext(request);
+    const session = requireTenantWrite(request);
     const tenantIdFromQuery = request.nextUrl.searchParams.get("tenantId");
     const tenantId = resolveTenantScope(session, tenantIdFromQuery);
+    await assertTenantIsAccessible(session, tenantId);
     const body = await parseJson(request, createNetworkSchema);
 
     const network = await prisma.network.create({

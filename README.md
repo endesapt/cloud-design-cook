@@ -66,13 +66,29 @@ This keeps host usage low so multiple VMs can run simultaneously.
 
 ## Seed Users
 - `admin@cloud.local / ChangeMe123!` (global admin)
+- `support@cloud.local / ChangeMe123!` (support viewer, read-only)
 - `owner@alpha.local / ChangeMe123!` (tenant admin)
+- `viewer@alpha.local / ChangeMe123!` (tenant user, read-only)
 - `owner@beta.local / ChangeMe123!` (tenant admin)
 
 ## Tenant UI Notes
 - Security groups are managed via dedicated pages:
   - `/network/security-groups`
   - `/network/security-groups/:id`
+- VM edit page:
+  - `/instances/:id/edit`
+- Tenant user management:
+  - `/users`
+
+## Admin UI Notes
+- Global users management:
+  - `/admin/users`
+- Support context switch:
+  - `/admin/support`
+  - `/admin/support/:tenantId/instances`
+  - `/admin/support/:tenantId/network`
+  - `/admin/support/:tenantId/security-groups`
+  - `/admin/support/:tenantId/users`
 
 ## Scripts
 - `npm run lint`

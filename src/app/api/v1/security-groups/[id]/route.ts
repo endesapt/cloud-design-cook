@@ -3,8 +3,8 @@ import { prisma } from "@/lib/db/prisma";
 import { apiError, apiOk } from "@/lib/api/http";
 import { parseJson } from "@/lib/api/parse";
 import { updateSecurityGroupSchema } from "@/lib/api/schemas";
-import { requireTenantContext } from "@/lib/auth/guards";
-import { resolveTenantScope } from "@/lib/tenant/scope";
+import { requireTenantRead, requireTenantWrite } from "@/lib/auth/guards";
+import { assertTenantIsAccessible, resolveTenantScope } from "@/lib/tenant/scope";
 import { AppError, NotFoundError } from "@/lib/errors/app-error";
 
 type Params = {
@@ -14,8 +14,9 @@ type Params = {
 export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const session = requireTenantContext(request);
+    const session = requireTenantRead(request);
     const tenantId = resolveTenantScope(session, request.nextUrl.searchParams.get("tenantId"));
+    await assertTenantIsAccessible(session, tenantId);
 
     const group = await prisma.securityGroup.findFirst({
       where: { id, tenantId },
@@ -39,8 +40,9 @@ export async function GET(request: NextRequest, { params }: Params) {
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const session = requireTenantContext(request);
+    const session = requireTenantWrite(request);
     const tenantId = resolveTenantScope(session, request.nextUrl.searchParams.get("tenantId"));
+    await assertTenantIsAccessible(session, tenantId);
     const body = await parseJson(request, updateSecurityGroupSchema);
 
     const existing = await prisma.securityGroup.findFirst({
@@ -74,8 +76,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const session = requireTenantContext(request);
+    const session = requireTenantWrite(request);
     const tenantId = resolveTenantScope(session, request.nextUrl.searchParams.get("tenantId"));
+    await assertTenantIsAccessible(session, tenantId);
 
     const existing = await prisma.securityGroup.findFirst({
       where: { id, tenantId },

@@ -6,7 +6,7 @@
 
 ## Primary Tables
 1. `tenants`: quota limits and organization metadata.
-2. `users`: role-based identities, optional tenant for global admin.
+2. `users`: role-based identities (`global_admin`, `support_viewer`, `tenant_admin`, `tenant_user`), optional tenant for global roles.
 3. `flavors`: shared VM shapes.
 4. `networks`: tenant-scoped virtual networks.
 5. `security_groups`: tenant-scoped access policies.
@@ -22,11 +22,14 @@
 
 ## Lifecycle Columns
 `instances` stores:
-- `status` (`CREATING|RUNNING|STOPPED|ERROR|DELETED`)
+- `status` (`CREATING|STARTING|RUNNING|STOPPING|STOPPED|TERMINATING|ERROR|DELETED`)
 - `readyAt` (mock async transition trigger)
 - `ipv4` (mock assigned IP)
 - `mockRef` (reference token)
 - `failReason` (debug cause for `ERROR`)
+
+`tenants` stores:
+- `status` (`ACTIVE|DELETING`) for async force-delete lifecycle.
 
 ## Quota Inputs
 Resource usage derives from instance flavor dimensions:

@@ -9,6 +9,12 @@
 - `POST /api/v1/auth/logout` -> clears cookie.
 - `GET /api/v1/auth/me` -> current user context.
 
+Roles:
+- `global_admin` -> full admin + support actions.
+- `support_viewer` -> read-only support access.
+- `tenant_admin` -> full mutate rights inside own tenant.
+- `tenant_user` -> read-only inside own tenant.
+
 ## Tenant APIs
 - `GET /api/v1/flavors`
 - `GET /api/v1/quota`
@@ -27,7 +33,15 @@
 - `DELETE /api/v1/security-groups/:id/rules/:ruleId`
 - `GET /api/v1/instances?status=RUNNING`
 - `POST /api/v1/instances` body `{ name, flavorId, networkId, securityGroupIds[] }`
+- `GET /api/v1/instances/:id`
+- `PATCH /api/v1/instances/:id` body `{ name?, flavorId?, securityGroupIds? }`
 - `POST /api/v1/instances/:id/action` body `{ action: start|stop|reboot|delete }`
+- `GET /api/v1/users`
+- `POST /api/v1/users` body `{ email, fullName, role, password, tenantId? }`
+- `GET /api/v1/users/:id`
+- `PATCH /api/v1/users/:id` body `{ fullName?, role?, tenantId? }`
+- `DELETE /api/v1/users/:id`
+- `POST /api/v1/users/:id/reset-password` body `{ password }`
 
 Instance behavior notes:
 - with `PROVISION_MODE=docker`, instance create/action endpoints control a real Docker container;
@@ -42,6 +56,14 @@ Instance behavior notes:
 - `POST /api/v1/admin/tenants`
 - `GET /api/v1/admin/tenants/:id`
 - `PATCH /api/v1/admin/tenants/:id`
+- `DELETE /api/v1/admin/tenants/:id` (precheck delete)
+- `DELETE /api/v1/admin/tenants/:id?force=true` (async force delete -> tenant `DELETING`)
+- `GET /api/v1/admin/users`
+- `POST /api/v1/admin/users` body `{ email, fullName, role, password, tenantId? }`
+- `GET /api/v1/admin/users/:id`
+- `PATCH /api/v1/admin/users/:id`
+- `DELETE /api/v1/admin/users/:id`
+- `POST /api/v1/admin/users/:id/reset-password` body `{ password }`
 
 ## Error Envelope
 All non-2xx responses use:
@@ -62,8 +84,13 @@ All non-2xx responses use:
 - `VALIDATION_ERROR` (422)
 - `QUOTA_EXCEEDED` (409)
 - `INVALID_TRANSITION` (409)
+- `INSTANCE_MUST_BE_STOPPED_FOR_RESIZE` (409)
 - `DUPLICATE_SECURITY_GROUP_RULE` (409)
 - `SG_IN_USE` (409)
+- `TENANT_NOT_EMPTY` (409)
+- `TENANT_DELETING` (409)
+- `LAST_TENANT_ADMIN` (409)
+- `ROLE_SCOPE_VIOLATION` (403/409)
 
 Tenant session note:
 - If the DB was reset/reseeded and the cookie points to a removed tenant, tenant APIs (including `/api/v1/quota`, `/api/v1/logs`, and `/api/v1/activity`) return `UNAUTHORIZED` and the session cookie is cleared.

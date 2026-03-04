@@ -47,6 +47,16 @@ export const createInstanceSchema = z.object({
   securityGroupIds: z.array(resourceIdSchema).min(1),
 });
 
+export const updateInstanceSchema = z
+  .object({
+    name: z.string().min(2).max(80).optional(),
+    flavorId: resourceIdSchema.optional(),
+    securityGroupIds: z.array(resourceIdSchema).min(1).optional(),
+  })
+  .refine((value) => value.name !== undefined || value.flavorId !== undefined || value.securityGroupIds !== undefined, {
+    message: "At least one field must be provided",
+  });
+
 export const instanceActionSchema = z.object({
   action: z.enum(["start", "stop", "reboot", "delete"]),
 });
@@ -67,4 +77,28 @@ export const updateTenantSchema = z.object({
   maxVcpus: z.number().int().min(1).max(4000).optional(),
   maxRamMb: z.number().int().min(256).max(8_388_608).optional(),
   maxDiskGb: z.number().int().min(10).max(1_000_000).optional(),
+});
+
+export const userRoleSchema = z.enum(["global_admin", "support_viewer", "tenant_admin", "tenant_user"]);
+
+export const createUserSchema = z.object({
+  email: z.string().email(),
+  fullName: z.string().min(2).max(120),
+  role: userRoleSchema,
+  password: z.string().min(8).max(128),
+  tenantId: resourceIdSchema.optional().nullable(),
+});
+
+export const updateUserSchema = z
+  .object({
+    fullName: z.string().min(2).max(120).optional(),
+    role: userRoleSchema.optional(),
+    tenantId: resourceIdSchema.optional().nullable(),
+  })
+  .refine((value) => value.fullName !== undefined || value.role !== undefined || value.tenantId !== undefined, {
+    message: "At least one field must be provided",
+  });
+
+export const resetUserPasswordSchema = z.object({
+  password: z.string().min(8).max(128),
 });

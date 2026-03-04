@@ -2,12 +2,12 @@ import { InstanceStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { apiError, apiOk } from "@/lib/api/http";
-import { requireRole } from "@/lib/auth/guards";
+import { requireAdminRead } from "@/lib/auth/guards";
 import { reconcileInstancesGlobal } from "@/lib/provisioning/reconcile";
 
 export async function GET(request: NextRequest) {
   try {
-    requireRole(request, ["global_admin"]);
+    requireAdminRead(request);
 
     await reconcileInstancesGlobal();
 

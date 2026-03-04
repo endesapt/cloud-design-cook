@@ -55,6 +55,52 @@ export async function checkQuotaBeforeCreate(tenantId: string, flavorId: string)
   return { limits, usage, flavor };
 }
 
+export async function checkQuotaBeforeResize(tenantId: string, currentFlavorId: string, nextFlavorId: string) {
+  if (currentFlavorId === nextFlavorId) {
+    return null;
+  }
+
+  const [limits, usage, currentFlavor, nextFlavor] = await Promise.all([
+    getTenantLimits(tenantId),
+    getTenantUsage(tenantId),
+    prisma.flavor.findUnique({
+      where: { id: currentFlavorId },
+      select: { id: true, name: true, vcpus: true, ramMb: true, diskGb: true },
+    }),
+    prisma.flavor.findUnique({
+      where: { id: nextFlavorId },
+      select: { id: true, name: true, vcpus: true, ramMb: true, diskGb: true },
+    }),
+  ]);
+
+  if (!currentFlavor) {
+    throw new NotFoundError("Current flavor not found");
+  }
+
+  if (!nextFlavor) {
+    throw new NotFoundError("Target flavor not found");
+  }
+
+  const projected = projectUsage(usage, {
+    vms: 0,
+    vcpus: nextFlavor.vcpus - currentFlavor.vcpus,
+    ramMb: nextFlavor.ramMb - currentFlavor.ramMb,
+    diskGb: nextFlavor.diskGb - currentFlavor.diskGb,
+  });
+
+  if (exceedsQuota(limits, projected)) {
+    throw new QuotaExceededError("Quota exceeded for tenant", {
+      limits,
+      usage,
+      projected,
+      currentFlavor: { id: currentFlavor.id, name: currentFlavor.name },
+      nextFlavor: { id: nextFlavor.id, name: nextFlavor.name },
+    });
+  }
+
+  return { limits, usage, projected, currentFlavor, nextFlavor };
+}
+
 export async function checkQuotaBeforeStart(tenantId: string) {
   const [limits, usage] = await Promise.all([getTenantLimits(tenantId), getTenantUsage(tenantId)]);
 

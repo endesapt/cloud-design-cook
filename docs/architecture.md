@@ -49,8 +49,9 @@ PostgreSQL
 ## 3. Multi-Tenancy and RBAC
 Roles:
 - `global_admin` – access to all tenants, quotas, global overview.
+- `support_viewer` – read-only support access across tenants.
 - `tenant_admin` – full access inside own tenant.
-- `tenant_user` – limited tenant access (reserved for extension).
+- `tenant_user` – read-only access inside own tenant.
 
 Isolation model:
 - tenant-owned entities always include `tenantId`.
@@ -83,7 +84,7 @@ Tenant quotas:
 - `maxVms`, `maxVcpus`, `maxRamMb`, `maxDiskGb`.
 
 Usage is computed from instances in statuses:
-- `CREATING`, `RUNNING`, `STOPPED`.
+- `CREATING`, `STARTING`, `RUNNING`, `STOPPING`, `STOPPED`, `TERMINATING`.
 
 Enforcement points:
 - before `POST /api/v1/instances`;
@@ -105,7 +106,12 @@ Primary mode:
 Fallback mode:
 1. if Docker is unavailable and `DOCKER_FALLBACK_TO_MOCK=true`, provisioning falls back to mock lifecycle;
 2. mock transitions are handled via `readyAt` + reconcile on read/action APIs;
-3. delete still transitions to `DELETED` for audit continuity.
+3. delete transitions through `TERMINATING` and then hard-deletes row.
+
+Tenant deletion mode:
+1. admin can request safe delete (`DELETE` with precheck);
+2. force delete sets tenant status `DELETING`;
+3. reconcile finalizes instance termination and then removes tenant + tenant users.
 
 ## 8. API Boundary and Error Model
 Transport layer:
