@@ -20,10 +20,7 @@ export async function apiFetch<T>(input: string, init?: RequestInit): Promise<T>
 
   if (!response.ok) {
     const error = (payload as ApiErrorShape).error;
-    const code = error?.code;
-    const isSessionExpired =
-      code === "UNAUTHORIZED" ||
-      (input === "/api/v1/quota" && code === "NOT_FOUND" && error?.message === "Tenant not found");
+    const isSessionExpired = error?.code === "UNAUTHORIZED";
 
     if (isSessionExpired && typeof window !== "undefined") {
       window.location.replace("/login");

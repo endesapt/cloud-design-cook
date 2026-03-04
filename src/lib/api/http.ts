@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { AppError } from "@/lib/errors/app-error";
+import { AUTH_COOKIE } from "@/lib/auth/token";
 
 export function apiOk(data: unknown, status = 200) {
   return NextResponse.json({ data }, { status });
@@ -8,7 +9,7 @@ export function apiOk(data: unknown, status = 200) {
 
 export function apiError(error: unknown) {
   if (error instanceof AppError) {
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         error: {
           code: error.code,
@@ -18,6 +19,17 @@ export function apiError(error: unknown) {
       },
       { status: error.statusCode },
     );
+
+    if (error.code === "UNAUTHORIZED") {
+      response.cookies.set({
+        name: AUTH_COOKIE,
+        value: "",
+        maxAge: 0,
+        path: "/",
+      });
+    }
+
+    return response;
   }
 
   if (error instanceof ZodError) {

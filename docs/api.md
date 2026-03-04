@@ -12,7 +12,8 @@
 ## Tenant APIs
 - `GET /api/v1/flavors`
 - `GET /api/v1/quota`
-- `GET /api/v1/activity`
+- `GET /api/v1/logs` (preferred)
+- `GET /api/v1/activity` (legacy alias)
 - `GET /api/v1/networks`
 - `POST /api/v1/networks` body `{ name, cidr }`
 - `GET /api/v1/security-groups`
@@ -53,3 +54,9 @@ All non-2xx responses use:
 - `VALIDATION_ERROR` (422)
 - `QUOTA_EXCEEDED` (409)
 - `INVALID_TRANSITION` (409)
+
+Tenant session note:
+- If the DB was reset/reseeded and the cookie points to a removed tenant, tenant APIs (including `/api/v1/quota`, `/api/v1/logs`, and `/api/v1/activity`) return `UNAUTHORIZED` and the session cookie is cleared.
+
+Client blocking note:
+- Some browser extensions can block URLs containing `activity` (`ERR_BLOCKED_BY_CLIENT`). Use `/api/v1/logs`.

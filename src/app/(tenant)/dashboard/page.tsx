@@ -34,10 +34,8 @@ export default function DashboardPage() {
   async function load() {
     try {
       setLoading(true);
-      const [quotaReport, activityFeed] = await Promise.all([
-        apiFetch<QuotaReport>("/api/v1/quota"),
-        apiFetch<ActivityItem[]>("/api/v1/activity"),
-      ]);
+      const quotaReport = await apiFetch<QuotaReport>("/api/v1/quota");
+      const activityFeed = await apiFetch<ActivityItem[]>("/api/v1/logs");
       setQuota(quotaReport);
       setActivity(activityFeed);
     } catch (error) {

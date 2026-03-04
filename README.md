@@ -96,6 +96,10 @@ npm run db:migrate
 npm run db:seed
 ```
 Then restart `npm run dev` and log in again.
+- `GET /api/v1/quota` or `GET /api/v1/activity` fails after DB reset/seed:
+the session cookie may reference an old tenant id. Refresh the page and sign in again (or clear `iaas_session` for `localhost`).
+- `net::ERR_BLOCKED_BY_CLIENT` on activity requests:
+privacy/ad-block extensions may block URLs with `activity`; the app uses `/api/v1/logs` as the primary endpoint.
 
 ## Docs
 Start from [docs/index.md](./docs/index.md).
