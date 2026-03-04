@@ -18,7 +18,13 @@
 - `POST /api/v1/networks` body `{ name, cidr }`
 - `GET /api/v1/security-groups`
 - `POST /api/v1/security-groups` body `{ name, description? }`
+- `GET /api/v1/security-groups/:id`
+- `PATCH /api/v1/security-groups/:id` body `{ name?, description? }`
+- `DELETE /api/v1/security-groups/:id`
+- `GET /api/v1/security-groups/:id/rules`
 - `POST /api/v1/security-groups/:id/rules` body `{ direction, protocol, portFrom?, portTo?, cidr }`
+- `PATCH /api/v1/security-groups/:id/rules/:ruleId` body `{ direction, protocol, portFrom?, portTo?, cidr }`
+- `DELETE /api/v1/security-groups/:id/rules/:ruleId`
 - `GET /api/v1/instances?status=RUNNING`
 - `POST /api/v1/instances` body `{ name, flavorId, networkId, securityGroupIds[] }`
 - `POST /api/v1/instances/:id/action` body `{ action: start|stop|reboot|delete }`
@@ -27,6 +33,8 @@ Instance behavior notes:
 - with `PROVISION_MODE=docker`, instance create/action endpoints control a real Docker container;
 - runtime resources are capped to minimal host-friendly values (`DOCKER_MIN_CPUS`, `DOCKER_MIN_MEMORY_MB`, `DOCKER_PIDS_LIMIT`);
 - if Docker is unavailable and fallback is enabled, the API transparently switches to mock lifecycle.
+- `start/stop/delete` actions are async and queue transition statuses before final reconciliation:
+  `STARTING`, `STOPPING`, `TERMINATING`.
 
 ## Admin APIs
 - `GET /api/v1/admin/overview`
@@ -54,6 +62,8 @@ All non-2xx responses use:
 - `VALIDATION_ERROR` (422)
 - `QUOTA_EXCEEDED` (409)
 - `INVALID_TRANSITION` (409)
+- `DUPLICATE_SECURITY_GROUP_RULE` (409)
+- `SG_IN_USE` (409)
 
 Tenant session note:
 - If the DB was reset/reseeded and the cookie points to a removed tenant, tenant APIs (including `/api/v1/quota`, `/api/v1/logs`, and `/api/v1/activity`) return `UNAUTHORIZED` and the session cookie is cleared.

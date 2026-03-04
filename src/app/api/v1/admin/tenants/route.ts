@@ -8,8 +8,11 @@ import { requireRole } from "@/lib/auth/guards";
 
 const usageStatuses: InstanceStatus[] = [
   InstanceStatus.CREATING,
+  InstanceStatus.STARTING,
   InstanceStatus.RUNNING,
+  InstanceStatus.STOPPING,
   InstanceStatus.STOPPED,
+  InstanceStatus.TERMINATING,
 ];
 
 function summarizeUsage(

@@ -11,12 +11,13 @@ import { checkQuotaBeforeStart } from "@/lib/quota/enforce";
 import {
   dockerProvisioningEnabled,
   nextStatusForAction,
+  nextTransitionReadyAt,
   reconcileInstancesForTenant,
   runDockerInstanceAction,
   scheduleProvisioning,
 } from "@/lib/provisioning/reconcile";
 import { writeOperationLog } from "@/lib/audit";
-import { AppError, NotFoundError } from "@/lib/errors/app-error";
+import { NotFoundError } from "@/lib/errors/app-error";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -47,119 +48,61 @@ export async function POST(request: NextRequest, { params }: Params) {
       throw new NotFoundError("Instance not found");
     }
 
-    if (fresh.status === InstanceStatus.DELETED) {
-      throw new AppError("Instance is already deleted", 409, "INVALID_TRANSITION");
-    }
-
     if (body.action === "start") {
       await checkQuotaBeforeStart(instance.tenantId);
     }
 
-    let updated;
     const fromStatus = fresh.status;
     let nextStatus: InstanceStatus;
 
-    if (dockerProvisioningEnabled()) {
-      if (!fresh.mockRef && (body.action === "start" || body.action === "reboot")) {
-        await scheduleProvisioning(fresh.id);
-        updated = await prisma.instance.findUnique({ where: { id: fresh.id } });
-        nextStatus = updated?.status ?? InstanceStatus.ERROR;
-      } else if (!fresh.mockRef && body.action === "stop") {
-        nextStatus = InstanceStatus.STOPPED;
-        updated = await prisma.instance.update({
-          where: { id: fresh.id },
-          data: {
-            status: InstanceStatus.STOPPED,
-            ipv4: null,
-            readyAt: null,
-            failReason: "Container reference missing, marked as STOPPED",
-          },
-        });
-      } else if (!fresh.mockRef && body.action === "delete") {
-        nextStatus = InstanceStatus.DELETED;
-        updated = await prisma.instance.update({
-          where: { id: fresh.id },
-          data: {
-            status: InstanceStatus.DELETED,
-            ipv4: null,
-            mockRef: null,
-            readyAt: null,
-          },
-        });
-      } else {
-        try {
-          const dockerResult = await runDockerInstanceAction(fresh.status, body.action, fresh.mockRef);
-          nextStatus = dockerResult.status;
-          updated = await prisma.instance.update({
-            where: { id: fresh.id },
-            data: {
-              status: dockerResult.status,
-              ipv4: dockerResult.ipv4,
-              readyAt: null,
-              failReason: null,
-              ...(dockerResult.status === InstanceStatus.DELETED
-                ? {
-                    mockRef: null,
-                  }
-                : {}),
-            },
-          });
-        } catch (error) {
-          if (!config.dockerFallbackToMock) {
-            throw error;
-          }
+    let updated;
+    if (body.action === "reboot") {
+      // Reboot contract remains unchanged: allowed only for RUNNING.
+      nextStatusForAction(fresh.status, body.action);
 
-          if (body.action === "delete") {
-            nextStatus = InstanceStatus.DELETED;
+      if (dockerProvisioningEnabled()) {
+        if (!fresh.mockRef) {
+          await scheduleProvisioning(fresh.id);
+          updated = await prisma.instance.findUnique({ where: { id: fresh.id } });
+          nextStatus = updated?.status ?? InstanceStatus.ERROR;
+        } else {
+          try {
+            const dockerResult = await runDockerInstanceAction(fresh.status, body.action, fresh.mockRef);
+            nextStatus = dockerResult.status;
             updated = await prisma.instance.update({
               where: { id: fresh.id },
               data: {
-                status: InstanceStatus.DELETED,
-                ipv4: null,
-                mockRef: null,
+                status: dockerResult.status,
+                ipv4: dockerResult.ipv4,
                 readyAt: null,
-                failReason: "Docker action failed, deleted in fallback mode",
+                failReason: null,
               },
             });
-          } else if (body.action === "stop") {
-            nextStatus = InstanceStatus.STOPPED;
-            updated = await prisma.instance.update({
-              where: { id: fresh.id },
-              data: {
-                status: InstanceStatus.STOPPED,
-                ipv4: null,
-                readyAt: null,
-                failReason: "Docker stop failed, switched to fallback state",
-              },
-            });
-          } else {
+          } catch (error) {
+            if (!config.dockerFallbackToMock) {
+              throw error;
+            }
+
             await scheduleProvisioning(fresh.id);
             updated = await prisma.instance.findUnique({ where: { id: fresh.id } });
             nextStatus = updated?.status ?? InstanceStatus.ERROR;
           }
         }
+      } else {
+        await scheduleProvisioning(fresh.id);
+        updated = await prisma.instance.findUnique({ where: { id: fresh.id } });
+        nextStatus = updated?.status ?? InstanceStatus.ERROR;
       }
     } else {
       nextStatus = nextStatusForAction(fresh.status, body.action);
-
-      if (nextStatus === InstanceStatus.CREATING) {
-        await scheduleProvisioning(fresh.id);
-        updated = await prisma.instance.findUnique({ where: { id: fresh.id } });
-      } else {
-        updated = await prisma.instance.update({
-          where: { id: fresh.id },
-          data: {
-            status: nextStatus,
-            readyAt: null,
-            ...(nextStatus === InstanceStatus.DELETED
-              ? {
-                  ipv4: null,
-                  failReason: null,
-                }
-              : {}),
-          },
-        });
-      }
+      updated = await prisma.instance.update({
+        where: { id: fresh.id },
+        data: {
+          status: nextStatus,
+          readyAt: nextTransitionReadyAt(),
+          failReason: null,
+        },
+      });
     }
 
     if (!updated) {

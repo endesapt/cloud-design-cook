@@ -55,6 +55,7 @@ npm run dev
 ## Provisioning Modes
 - `PROVISION_MODE=docker`: instance create/action controls a real Docker container.
 - `PROVISION_MODE=mock`: pure mock lifecycle.
+- `start/stop/delete` actions are asynchronous and move through transition states (`STARTING`, `STOPPING`, `TERMINATING`).
 
 Default `.env.example` is Docker mode with low per-instance runtime limits:
 - `DOCKER_MIN_CPUS=0.10`
@@ -67,6 +68,11 @@ This keeps host usage low so multiple VMs can run simultaneously.
 - `admin@cloud.local / ChangeMe123!` (global admin)
 - `owner@alpha.local / ChangeMe123!` (tenant admin)
 - `owner@beta.local / ChangeMe123!` (tenant admin)
+
+## Tenant UI Notes
+- Security groups are managed via dedicated pages:
+  - `/network/security-groups`
+  - `/network/security-groups/:id`
 
 ## Scripts
 - `npm run lint`

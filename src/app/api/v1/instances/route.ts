@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const instances = await prisma.instance.findMany({
       where: {
         tenantId,
-        ...(status ? { status } : {}),
+        ...(status ? { status } : { status: { not: InstanceStatus.DELETED } }),
       },
       include: {
         flavor: true,

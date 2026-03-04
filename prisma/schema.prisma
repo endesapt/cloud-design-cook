@@ -15,8 +15,11 @@ enum UserRole {
 
 enum InstanceStatus {
   CREATING
+  STARTING
   RUNNING
+  STOPPING
   STOPPED
+  TERMINATING
   ERROR
   DELETED
 }

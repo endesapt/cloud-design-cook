@@ -9,38 +9,12 @@ import { AppError, NotFoundError } from "@/lib/errors/app-error";
 import { hasDuplicateRule, validateRulePortRange } from "@/lib/security-groups/rules";
 
 type Params = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; ruleId: string }>;
 };
 
-export async function GET(request: NextRequest, { params }: Params) {
+export async function PATCH(request: NextRequest, { params }: Params) {
   try {
-    const { id } = await params;
-    const session = requireTenantContext(request);
-    const tenantId = resolveTenantScope(session, request.nextUrl.searchParams.get("tenantId"));
-
-    const sg = await prisma.securityGroup.findFirst({
-      where: { id, tenantId },
-      select: { id: true },
-    });
-
-    if (!sg) {
-      throw new NotFoundError("Security group not found");
-    }
-
-    const rules = await prisma.securityGroupRule.findMany({
-      where: { securityGroupId: sg.id },
-      orderBy: { createdAt: "asc" },
-    });
-
-    return apiOk(rules);
-  } catch (error) {
-    return apiError(error);
-  }
-}
-
-export async function POST(request: NextRequest, { params }: Params) {
-  try {
-    const { id } = await params;
+    const { id, ruleId } = await params;
     const session = requireTenantContext(request);
     const tenantId = resolveTenantScope(session, request.nextUrl.searchParams.get("tenantId"));
     const body = await parseJson(request, createSecurityGroupRuleSchema);
@@ -71,7 +45,13 @@ export async function POST(request: NextRequest, { params }: Params) {
       throw new NotFoundError("Security group not found");
     }
 
+    const existingRule = sg.rules.find((rule) => rule.id === ruleId);
+    if (!existingRule) {
+      throw new NotFoundError("Security group rule not found");
+    }
+
     const candidate = {
+      id: ruleId,
       direction: body.direction,
       protocol: body.protocol,
       portFrom: body.portFrom ?? null,
@@ -79,13 +59,13 @@ export async function POST(request: NextRequest, { params }: Params) {
       cidr: body.cidr,
     };
 
-    if (hasDuplicateRule(sg.rules, candidate)) {
+    if (hasDuplicateRule(sg.rules, candidate, ruleId)) {
       throw new AppError("Duplicate security group rule", 409, "DUPLICATE_SECURITY_GROUP_RULE");
     }
 
-    const rule = await prisma.securityGroupRule.create({
+    const updated = await prisma.securityGroupRule.update({
+      where: { id: ruleId },
       data: {
-        securityGroupId: sg.id,
         direction: body.direction,
         protocol: body.protocol,
         portFrom: body.portFrom ?? null,
@@ -94,7 +74,39 @@ export async function POST(request: NextRequest, { params }: Params) {
       },
     });
 
-    return apiOk(rule, 201);
+    return apiOk(updated);
+  } catch (error) {
+    return apiError(error);
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: Params) {
+  try {
+    const { id, ruleId } = await params;
+    const session = requireTenantContext(request);
+    const tenantId = resolveTenantScope(session, request.nextUrl.searchParams.get("tenantId"));
+
+    const sg = await prisma.securityGroup.findFirst({
+      where: { id, tenantId },
+      select: { id: true },
+    });
+
+    if (!sg) {
+      throw new NotFoundError("Security group not found");
+    }
+
+    const deleted = await prisma.securityGroupRule.deleteMany({
+      where: {
+        id: ruleId,
+        securityGroupId: sg.id,
+      },
+    });
+
+    if (deleted.count === 0) {
+      throw new NotFoundError("Security group rule not found");
+    }
+
+    return apiOk({ deleted: true });
   } catch (error) {
     return apiError(error);
   }

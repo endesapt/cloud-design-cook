@@ -22,7 +22,14 @@ export async function GET(request: NextRequest) {
         by: ["flavorId"],
         where: {
           status: {
-            in: [InstanceStatus.CREATING, InstanceStatus.RUNNING, InstanceStatus.STOPPED],
+            in: [
+              InstanceStatus.CREATING,
+              InstanceStatus.STARTING,
+              InstanceStatus.RUNNING,
+              InstanceStatus.STOPPING,
+              InstanceStatus.STOPPED,
+              InstanceStatus.TERMINATING,
+            ],
           },
         },
         _count: { flavorId: true },

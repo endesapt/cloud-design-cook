@@ -21,6 +21,15 @@ export const createSecurityGroupSchema = z.object({
   description: z.string().max(255).optional(),
 });
 
+export const updateSecurityGroupSchema = z
+  .object({
+    name: z.string().min(2).max(64).optional(),
+    description: z.string().max(255).nullable().optional(),
+  })
+  .refine((value) => value.name !== undefined || value.description !== undefined, {
+    message: "At least one field must be provided",
+  });
+
 export const createSecurityGroupRuleSchema = z.object({
   direction: z.enum(["ingress", "egress"]),
   protocol: z.string().min(1).max(16),

@@ -6,7 +6,8 @@ const items = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/instances", label: "Instances" },
   { href: "/instances/new", label: "Create Instance" },
-  { href: "/network", label: "Network & SG" },
+  { href: "/network", label: "Networks" },
+  { href: "/network/security-groups", label: "Security Groups" },
 ];
 
 export default async function TenantLayout({ children }: { children: React.ReactNode }) {

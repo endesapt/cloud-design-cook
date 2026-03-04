@@ -4,8 +4,11 @@ import type { QuotaUsage } from "@/lib/quota/types";
 
 const QUOTA_RELEVANT_STATUSES: InstanceStatus[] = [
   InstanceStatus.CREATING,
+  InstanceStatus.STARTING,
   InstanceStatus.RUNNING,
+  InstanceStatus.STOPPING,
   InstanceStatus.STOPPED,
+  InstanceStatus.TERMINATING,
 ];
 
 export async function getTenantUsage(tenantId: string): Promise<QuotaUsage> {

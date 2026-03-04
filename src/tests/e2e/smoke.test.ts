@@ -7,11 +7,11 @@ describe("e2e smoke: lifecycle + quota path", () => {
   it("simulates create then stop then start transitions", () => {
     const created = InstanceStatus.CREATING;
     const stopped = nextStatusForAction(InstanceStatus.RUNNING, "stop");
-    const restarted = nextStatusForAction(stopped, "start");
+    const restarted = nextStatusForAction(InstanceStatus.STOPPED, "start");
 
     expect(created).toBe(InstanceStatus.CREATING);
-    expect(stopped).toBe(InstanceStatus.STOPPED);
-    expect(restarted).toBe(InstanceStatus.CREATING);
+    expect(stopped).toBe(InstanceStatus.STOPPING);
+    expect(restarted).toBe(InstanceStatus.STARTING);
   });
 
   it("detects quota pressure when adding flavor resources", () => {

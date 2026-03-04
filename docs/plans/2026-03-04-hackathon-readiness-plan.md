@@ -126,3 +126,7 @@
 6. Добавлен client-side fallback для устаревшей сессии после пересоздания БД: при `UNAUTHORIZED` пользователь перенаправляется на `/login`.
 7. Нормализовано поведение tenant API для устаревшей сессии: `/api/v1/quota` и `/api/v1/activity` возвращают `UNAUTHORIZED`, API-ответ сбрасывает `iaas_session`, чтобы фронт не застревал в цикле ошибок.
 8. Добавлен alias endpoint `/api/v1/logs` (legacy `/api/v1/activity` сохранён) и dashboard переведён на `/api/v1/logs` для обхода `ERR_BLOCKED_BY_CLIENT` от browser extensions.
+9. Реализованы асинхронные переходы lifecycle VM: `STARTING`, `STOPPING`, `TERMINATING`, действия `start/stop/delete` теперь queue-like, а финализация выполняется через reconcile.
+10. Удаление VM переведено на `TERMINATING -> hard delete`: после завершения перехода запись физически удаляется и исчезает из tenant списка.
+11. Обновлён tenant UI инстансов: матрица доступности действий по статусам, polling 2s, отдельный показ `Logical IP` и `Runtime IP`.
+12. Security Groups вынесены в отдельный manager (`/network/security-groups` + detail page), добавлены SG CRUD endpoints, CRUD правил и защита от дублей правил.

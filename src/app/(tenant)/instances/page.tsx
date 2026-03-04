@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { InstanceStatus } from "@prisma/client";
 import { Play, Square, RotateCcw, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { InstanceStatusBadge } from "@/components/domain/instance-status-badge";
 import { PageHeader } from "@/components/layout/page-header";
 import { LogoutButton } from "@/components/domain/logout-button";
 import { apiFetch } from "@/lib/client/api";
+import { deriveLogicalIpv4 } from "@/lib/network/logical-ip";
 import type { InstanceDto } from "@/lib/types";
 
 const ACTIONS = [
@@ -19,16 +21,45 @@ const ACTIONS = [
   { key: "delete", label: "Delete", icon: Trash2 },
 ] as const;
 
+type ActionKey = (typeof ACTIONS)[number]["key"];
+const TRANSITION_STATUSES: InstanceStatus[] = [
+  InstanceStatus.CREATING,
+  InstanceStatus.STARTING,
+  InstanceStatus.STOPPING,
+  InstanceStatus.TERMINATING,
+];
+
+function isActionAllowed(status: InstanceStatus, action: ActionKey) {
+  if (TRANSITION_STATUSES.includes(status)) {
+    return false;
+  }
+
+  if (status === InstanceStatus.RUNNING) {
+    return ["stop", "reboot", "delete"].includes(action);
+  }
+
+  if (status === InstanceStatus.STOPPED) {
+    return ["start", "delete"].includes(action);
+  }
+
+  if (status === InstanceStatus.ERROR) {
+    return action === "delete";
+  }
+
+  return false;
+}
+
 export default function InstancesPage() {
   const [instances, setInstances] = useState<InstanceDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const pendingDeleteIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     void load();
     const timer = setInterval(() => {
       void load(false);
-    }, 6000);
+    }, 2000);
 
     return () => clearInterval(timer);
   }, []);
@@ -37,6 +68,17 @@ export default function InstancesPage() {
     try {
       if (showLoader) setLoading(true);
       const data = await apiFetch<InstanceDto[]>("/api/v1/instances");
+
+      const pendingDeletes = pendingDeleteIdsRef.current;
+      if (pendingDeletes.size) {
+        for (const pendingId of [...pendingDeletes]) {
+          if (!data.some((instance) => instance.id === pendingId)) {
+            pendingDeletes.delete(pendingId);
+            toast.success("Instance deleted");
+          }
+        }
+      }
+
       setInstances(data);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load instances");
@@ -45,15 +87,20 @@ export default function InstancesPage() {
     }
   }
 
-  async function runAction(instanceId: string, action: (typeof ACTIONS)[number]["key"]) {
+  async function runAction(instanceId: string, action: ActionKey) {
     try {
       setBusyId(instanceId);
       await apiFetch(`/api/v1/instances/${instanceId}/action`, {
         method: "POST",
         body: JSON.stringify({ action }),
       });
+
+      if (action === "delete") {
+        pendingDeleteIdsRef.current.add(instanceId);
+      }
+
       await load(false);
-      toast.success(`Action ${action} queued`);
+      toast.success("Action queued");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Action failed");
     } finally {
@@ -65,7 +112,7 @@ export default function InstancesPage() {
     <div>
       <PageHeader
         title="Instances"
-        description="Manage VM lifecycle in mock compute layer"
+        description="Manage VM lifecycle and transition states"
         right={
           <div className="flex items-center gap-2">
             <Button asChild>
@@ -105,39 +152,50 @@ export default function InstancesPage() {
                     <th className="px-3 py-3.5">Name</th>
                     <th className="px-3 py-3.5">Status</th>
                     <th className="px-3 py-3.5">Flavor</th>
-                    <th className="px-3 py-3.5">IP</th>
+                    <th className="px-3 py-3.5">IP Addresses</th>
                     <th className="px-3 py-3.5">Network</th>
                     <th className="px-3 py-3.5">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {instances.map((instance) => (
-                    <tr key={instance.id} className="border-b border-[--line] transition-colors hover:bg-[--surface-2]/60 last:border-none">
-                      <td className="px-3 py-4 font-medium text-[--ink-1]">{instance.name}</td>
-                      <td className="px-3 py-4">
-                        <InstanceStatusBadge status={instance.status} />
-                      </td>
-                      <td className="px-3 py-4 text-[--ink-2]">{instance.flavor.name}</td>
-                      <td className="px-3 py-4 font-mono text-xs text-[--ink-2]">{instance.ipv4 ?? "pending"}</td>
-                      <td className="px-3 py-4 text-[--ink-2]">{instance.network.name}</td>
-                      <td className="px-3 py-4">
-                        <div className="flex min-w-[17rem] flex-wrap gap-2">
-                          {ACTIONS.map((action) => (
-                            <Button
-                              key={action.key}
-                              variant={action.key === "delete" ? "destructive" : "secondary"}
-                              size="sm"
-                              disabled={busyId === instance.id}
-                              onClick={() => runAction(instance.id, action.key)}
-                            >
-                              <action.icon className="mr-1 h-3.5 w-3.5" />
-                              {action.label}
-                            </Button>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {instances.map((instance) => {
+                    const logicalIp = deriveLogicalIpv4(instance.network.cidr, instance.id) ?? "n/a";
+                    return (
+                      <tr
+                        key={instance.id}
+                        className="border-b border-[--line] transition-colors hover:bg-[--surface-2]/60 last:border-none"
+                      >
+                        <td className="px-3 py-4 font-medium text-[--ink-1]">{instance.name}</td>
+                        <td className="px-3 py-4">
+                          <InstanceStatusBadge status={instance.status} />
+                        </td>
+                        <td className="px-3 py-4 text-[--ink-2]">{instance.flavor.name}</td>
+                        <td className="px-3 py-4">
+                          <div className="space-y-0.5">
+                            <p className="font-mono text-xs text-[--ink-2]">Logical: {logicalIp}</p>
+                            <p className="font-mono text-xs text-[--ink-3]">Runtime: {instance.ipv4 ?? "not assigned yet"}</p>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 text-[--ink-2]">{instance.network.name}</td>
+                        <td className="px-3 py-4">
+                          <div className="flex min-w-[17rem] flex-wrap gap-2">
+                            {ACTIONS.map((action) => (
+                              <Button
+                                key={action.key}
+                                variant={action.key === "delete" ? "destructive" : "secondary"}
+                                size="sm"
+                                disabled={busyId === instance.id || !isActionAllowed(instance.status, action.key)}
+                                onClick={() => runAction(instance.id, action.key)}
+                              >
+                                <action.icon className="mr-1 h-3.5 w-3.5" />
+                                {action.label}
+                              </Button>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

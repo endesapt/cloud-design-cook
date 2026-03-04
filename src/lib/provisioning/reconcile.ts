@@ -12,9 +12,15 @@ import {
   stopDockerContainer,
 } from "@/lib/provisioning/docker";
 
-function randomDelayMs() {
+function randomProvisionDelayMs() {
   const min = 5_000;
   const max = 15_000;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomTransitionDelayMs() {
+  const min = 4_000;
+  const max = 6_000;
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
@@ -43,6 +49,15 @@ function fallbackToMockIsEnabled() {
 function dockerResourcesMeta() {
   const resources = runtimeResources();
   return `${resources.cpus} CPU / ${resources.memoryMb}MB RAM / pids ${resources.pidsLimit}`;
+}
+
+function canUseDockerReference(reference: string | null): reference is string {
+  if (!reference) return false;
+  return !reference.startsWith("mock-") && !reference.startsWith("queued-");
+}
+
+export function nextTransitionReadyAt() {
+  return new Date(Date.now() + randomTransitionDelayMs());
 }
 
 export async function scheduleProvisioning(instanceId: string) {
@@ -75,7 +90,7 @@ export async function scheduleProvisioning(instanceId: string) {
     }
   }
 
-  const delay = randomDelayMs();
+  const delay = randomProvisionDelayMs();
   const readyAt = new Date(Date.now() + delay);
 
   return prisma.instance.update({
@@ -90,50 +105,198 @@ export async function scheduleProvisioning(instanceId: string) {
   });
 }
 
+async function finalizeCreating(instance: { id: string; tenantId: string }) {
+  if (shouldFailProvision()) {
+    await prisma.instance.update({
+      where: { id: instance.id },
+      data: {
+        status: InstanceStatus.ERROR,
+        failReason: "Mock hypervisor transient failure",
+        readyAt: null,
+      },
+    });
+    return;
+  }
+
+  await prisma.instance.update({
+    where: { id: instance.id },
+    data: {
+      status: InstanceStatus.RUNNING,
+      ipv4: pseudoIpForTenant(instance.tenantId, instance.id),
+      mockRef: buildMockRef(instance.id),
+      failReason: null,
+      readyAt: null,
+    },
+  });
+}
+
+async function finalizeStarting(instance: { id: string; tenantId: string; mockRef: string | null }) {
+  if (shouldUseDockerProvisioning() && canUseDockerReference(instance.mockRef)) {
+    try {
+      const ipv4 = await startDockerContainer(instance.mockRef);
+      await prisma.instance.update({
+        where: { id: instance.id },
+        data: {
+          status: InstanceStatus.RUNNING,
+          ipv4,
+          failReason: null,
+          readyAt: null,
+        },
+      });
+      return;
+    } catch (error) {
+      if (!fallbackToMockIsEnabled()) {
+        const failReason = error instanceof Error ? error.message : "Docker start failed";
+        await prisma.instance.update({
+          where: { id: instance.id },
+          data: {
+            status: InstanceStatus.ERROR,
+            failReason,
+            readyAt: null,
+          },
+        });
+        return;
+      }
+    }
+  }
+
+  if (shouldUseDockerProvisioning() && !instance.mockRef) {
+    await scheduleProvisioning(instance.id);
+    return;
+  }
+
+  await prisma.instance.update({
+    where: { id: instance.id },
+    data: {
+      status: InstanceStatus.RUNNING,
+      ipv4: pseudoIpForTenant(instance.tenantId, instance.id),
+      mockRef: instance.mockRef ?? buildMockRef(instance.id),
+      failReason: null,
+      readyAt: null,
+    },
+  });
+}
+
+async function finalizeStopping(instance: { id: string; mockRef: string | null }) {
+  if (shouldUseDockerProvisioning() && canUseDockerReference(instance.mockRef)) {
+    try {
+      await stopDockerContainer(instance.mockRef);
+      await prisma.instance.update({
+        where: { id: instance.id },
+        data: {
+          status: InstanceStatus.STOPPED,
+          ipv4: null,
+          failReason: null,
+          readyAt: null,
+        },
+      });
+      return;
+    } catch (error) {
+      if (!fallbackToMockIsEnabled()) {
+        const failReason = error instanceof Error ? error.message : "Docker stop failed";
+        await prisma.instance.update({
+          where: { id: instance.id },
+          data: {
+            status: InstanceStatus.ERROR,
+            failReason,
+            readyAt: null,
+          },
+        });
+        return;
+      }
+    }
+  }
+
+  await prisma.instance.update({
+    where: { id: instance.id },
+    data: {
+      status: InstanceStatus.STOPPED,
+      ipv4: null,
+      failReason: instance.mockRef
+        ? "Docker stop failed, switched to fallback state"
+        : "Container reference missing, marked as STOPPED",
+      readyAt: null,
+    },
+  });
+}
+
+async function finalizeTerminating(instance: { id: string; mockRef: string | null }) {
+  if (shouldUseDockerProvisioning() && canUseDockerReference(instance.mockRef)) {
+    try {
+      await removeDockerContainer(instance.mockRef);
+    } catch (error) {
+      if (!fallbackToMockIsEnabled()) {
+        const failReason = error instanceof Error ? error.message : "Docker delete failed";
+        await prisma.instance.update({
+          where: { id: instance.id },
+          data: {
+            status: InstanceStatus.ERROR,
+            failReason,
+            readyAt: null,
+          },
+        });
+        return;
+      }
+    }
+  }
+
+  await prisma.instance.delete({ where: { id: instance.id } });
+}
+
 export async function reconcileInstancesForTenant(tenantId: string) {
   const now = new Date();
 
   const dueInstances = await prisma.instance.findMany({
     where: {
       tenantId,
-      status: InstanceStatus.CREATING,
+      status: {
+        in: [InstanceStatus.CREATING, InstanceStatus.STARTING, InstanceStatus.STOPPING, InstanceStatus.TERMINATING],
+      },
       readyAt: { lte: now },
     },
-    select: { id: true, tenantId: true },
+    select: { id: true, tenantId: true, status: true, mockRef: true },
   });
 
   if (!dueInstances.length) {
     return 0;
   }
 
-  await prisma.$transaction(
-    dueInstances.map((instance) =>
-      prisma.instance.update({
+  let processed = 0;
+  for (const instance of dueInstances) {
+    try {
+      if (instance.status === InstanceStatus.CREATING) {
+        await finalizeCreating(instance);
+      } else if (instance.status === InstanceStatus.STARTING) {
+        await finalizeStarting(instance);
+      } else if (instance.status === InstanceStatus.STOPPING) {
+        await finalizeStopping(instance);
+      } else if (instance.status === InstanceStatus.TERMINATING) {
+        await finalizeTerminating(instance);
+      }
+      processed += 1;
+    } catch (error) {
+      const failReason = error instanceof Error ? error.message : "Lifecycle reconciliation failed";
+      await prisma.instance.update({
         where: { id: instance.id },
-        data: shouldFailProvision()
-          ? {
-              status: InstanceStatus.ERROR,
-              failReason: "Mock hypervisor transient failure",
-              readyAt: null,
-            }
-          : {
-              status: InstanceStatus.RUNNING,
-              ipv4: pseudoIpForTenant(instance.tenantId, instance.id),
-              mockRef: buildMockRef(instance.id),
-              failReason: null,
-              readyAt: null,
-            },
-      }),
-    ),
-  );
+        data: {
+          status: InstanceStatus.ERROR,
+          failReason,
+          readyAt: null,
+        },
+      });
+      processed += 1;
+    }
+  }
 
-  return dueInstances.length;
+  return processed;
 }
 
 export async function reconcileInstancesGlobal() {
   const tenants = await prisma.instance.findMany({
     where: {
-      status: InstanceStatus.CREATING,
+      status: {
+        in: [InstanceStatus.CREATING, InstanceStatus.STARTING, InstanceStatus.STOPPING, InstanceStatus.TERMINATING],
+      },
       readyAt: { lte: new Date() },
     },
     select: { tenantId: true },
@@ -149,22 +312,36 @@ export async function reconcileInstancesGlobal() {
 }
 
 export function nextStatusForAction(currentStatus: InstanceStatus, action: "start" | "stop" | "reboot" | "delete") {
+  const transitionStatuses: InstanceStatus[] = [
+    InstanceStatus.CREATING,
+    InstanceStatus.STARTING,
+    InstanceStatus.STOPPING,
+    InstanceStatus.TERMINATING,
+  ];
+
+  if (transitionStatuses.includes(currentStatus)) {
+    throw new AppError("Action is not allowed while instance transition is in progress", 409, "INVALID_TRANSITION");
+  }
+
   if (action === "delete") {
-    return InstanceStatus.DELETED;
+    if (currentStatus === InstanceStatus.DELETED) {
+      throw new AppError("Instance is already deleted", 409, "INVALID_TRANSITION");
+    }
+    return InstanceStatus.TERMINATING;
   }
 
   if (action === "stop") {
     if (currentStatus !== InstanceStatus.RUNNING) {
       throw new AppError("Stop action allowed only for RUNNING instance", 409, "INVALID_TRANSITION");
     }
-    return InstanceStatus.STOPPED;
+    return InstanceStatus.STOPPING;
   }
 
   if (action === "start") {
     if (currentStatus !== InstanceStatus.STOPPED) {
       throw new AppError("Start action allowed only for STOPPED instance", 409, "INVALID_TRANSITION");
     }
-    return InstanceStatus.CREATING;
+    return InstanceStatus.STARTING;
   }
 
   if (action === "reboot") {
