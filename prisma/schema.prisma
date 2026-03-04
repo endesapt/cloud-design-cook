@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  global_admin
+  tenant_admin
+  tenant_user
+}
+
+enum InstanceStatus {
+  CREATING
+  RUNNING
+  STOPPED
+  ERROR
+  DELETED
+}
+
+enum RuleDirection {
+  ingress
+  egress
+}
+
+enum OperationAction {
+  LOGIN
+  LOGOUT
+  CREATE_INSTANCE
+  INSTANCE_ACTION
+  CREATE_NETWORK
+  CREATE_SECURITY_GROUP
+  UPDATE_TENANT_QUOTA
+}
+
+model Tenant {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String          @unique
+  description String?
+  maxVms      Int             @default(3)
+  maxVcpus    Int             @default(6)
+  maxRamMb    Int             @default(12288)
+  maxDiskGb   Int             @default(120)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  users       User[]
+  networks    Network[]
+  secGroups   SecurityGroup[]
+  instances   Instance[]
+  operations  OperationLog[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String         @id @default(uuid()) @db.Uuid
+  email        String         @unique
+  passwordHash String
+  fullName     String
+  role         UserRole
+  tenantId     String?        @db.Uuid
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  tenant       Tenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  operations   OperationLog[]
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Flavor {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String     @unique
+  vcpus     Int
+  ramMb     Int
+  diskGb    Int
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  instances Instance[]
+
+  @@map("flavors")
+}
+
+model Network {
+  id        String     @id @default(uuid()) @db.Uuid
+  tenantId  String     @db.Uuid
+  name      String
+  cidr      String
+  createdAt DateTime   @default(now())
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  instances Instance[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("networks")
+}
+
+model SecurityGroup {
+  id          String               @id @default(uuid()) @db.Uuid
+  tenantId    String               @db.Uuid
+  name        String
+  description String?
+  createdAt   DateTime             @default(now())
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rules       SecurityGroupRule[]
+  instances   InstanceSecurityGroup[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("security_groups")
+}
+
+model SecurityGroupRule {
+  id              String         @id @default(uuid()) @db.Uuid
+  securityGroupId String         @db.Uuid
+  direction       RuleDirection
+  protocol        String
+  portFrom        Int?
+  portTo          Int?
+  cidr            String
+  createdAt       DateTime       @default(now())
+  securityGroup   SecurityGroup  @relation(fields: [securityGroupId], references: [id], onDelete: Cascade)
+
+  @@index([securityGroupId])
+  @@map("security_group_rules")
+}
+
+model Instance {
+  id             String                  @id @default(uuid()) @db.Uuid
+  tenantId       String                  @db.Uuid
+  name           String
+  flavorId       String                  @db.Uuid
+  networkId      String                  @db.Uuid
+  status         InstanceStatus
+  ipv4           String?
+  mockRef        String?
+  readyAt        DateTime?
+  failReason     String?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  tenant         Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  flavor         Flavor                  @relation(fields: [flavorId], references: [id])
+  network        Network                 @relation(fields: [networkId], references: [id])
+  securityGroups InstanceSecurityGroup[]
+
+  @@index([tenantId, status])
+  @@index([flavorId])
+  @@index([networkId])
+  @@map("instances")
+}
+
+model InstanceSecurityGroup {
+  instanceId      String         @db.Uuid
+  securityGroupId String         @db.Uuid
+  createdAt       DateTime       @default(now())
+  instance        Instance       @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  securityGroup   SecurityGroup  @relation(fields: [securityGroupId], references: [id], onDelete: Cascade)
+
+  @@id([instanceId, securityGroupId])
+  @@index([securityGroupId])
+  @@map("instance_security_groups")
+}
+
+model OperationLog {
+  id        String          @id @default(uuid()) @db.Uuid
+  tenantId  String?         @db.Uuid
+  userId    String?         @db.Uuid
+  action    OperationAction
+  details   Json
+  createdAt DateTime        @default(now())
+  tenant    Tenant?         @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  user      User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([userId, createdAt])
+  @@map("operations_log")
+}
