@@ -13,7 +13,7 @@ Implement a fullstack conceptual IaaS MVP on Next.js with:
 - agent-first documentation map.
 
 ## Decisions
-1. Keep provisioning mock-only with reconcile-on-access strategy.
+1. Add Docker-backed VM emulation with minimal runtime limits and keep mock reconcile as fallback.
 2. Keep all logic in single Next.js app (no microservice split).
 3. Prioritize UI quality for demo clarity and jury communication.
 4. Defer OIDC/SAML to post-MVP.

@@ -5,13 +5,14 @@ Conceptual multi-tenant IaaS platform MVP with:
 - admin control panel,
 - logical network isolation model,
 - quota management,
-- mock instance lifecycle.
+- Docker-backed VM emulation with mock fallback.
 
 ## Stack
 - Next.js (App Router) + TypeScript
 - Prisma + PostgreSQL
 - Tailwind + reusable UI primitives
 - Recharts for admin analytics
+- Docker Engine (optional but recommended for VM emulation)
 
 ## Quick Start
 1. Install dependencies:
@@ -22,19 +23,31 @@ npm install
 ```bash
 cp .env.example .env
 ```
-3. Generate Prisma client:
+3. Ensure Docker daemon is running if `PROVISION_MODE=docker`.
+4. Generate Prisma client:
 ```bash
 npm run db:generate
 ```
-4. Run migrations and seed:
+5. Run migrations and seed:
 ```bash
 npm run db:migrate
 npm run db:seed
 ```
-5. Start app:
+6. Start app:
 ```bash
 npm run dev
 ```
+
+## Provisioning Modes
+- `PROVISION_MODE=docker`: instance create/action controls a real Docker container.
+- `PROVISION_MODE=mock`: pure mock lifecycle.
+
+Default `.env.example` is Docker mode with low per-instance runtime limits:
+- `DOCKER_MIN_CPUS=0.10`
+- `DOCKER_MIN_MEMORY_MB=64`
+- `DOCKER_PIDS_LIMIT=64`
+
+This keeps host usage low so multiple demo VMs can run simultaneously.
 
 ## Seed Users
 - `admin@cloud.local / ChangeMe123!` (global admin)

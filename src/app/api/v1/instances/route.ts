@@ -8,7 +8,11 @@ import { requireTenantContext } from "@/lib/auth/guards";
 import { resolveTenantScope } from "@/lib/tenant/scope";
 import { checkQuotaBeforeCreate } from "@/lib/quota/enforce";
 import { ensureNetworkBelongsToTenant, ensureSecurityGroupsBelongToTenant } from "@/lib/tenant/ownership";
-import { scheduleProvisioning, reconcileInstancesForTenant } from "@/lib/provisioning/reconcile";
+import {
+  dockerProvisioningEnabled,
+  reconcileInstancesForTenant,
+  scheduleProvisioning,
+} from "@/lib/provisioning/reconcile";
 import { writeOperationLog } from "@/lib/audit";
 
 type StatusQuery = InstanceStatus | undefined;
@@ -93,6 +97,7 @@ export async function POST(request: NextRequest) {
       details: {
         instanceId: instance.id,
         name: instance.name,
+        mode: dockerProvisioningEnabled() ? "docker" : "mock",
       },
     });
 

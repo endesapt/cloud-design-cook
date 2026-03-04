@@ -22,6 +22,11 @@
 - `POST /api/v1/instances` body `{ name, flavorId, networkId, securityGroupIds[] }`
 - `POST /api/v1/instances/:id/action` body `{ action: start|stop|reboot|delete }`
 
+Instance behavior notes:
+- with `PROVISION_MODE=docker`, instance create/action endpoints control a real Docker container;
+- runtime resources are capped to minimal host-friendly values (`DOCKER_MIN_CPUS`, `DOCKER_MIN_MEMORY_MB`, `DOCKER_PIDS_LIMIT`);
+- if Docker is unavailable and fallback is enabled, the API transparently switches to mock lifecycle.
+
 ## Admin APIs
 - `GET /api/v1/admin/overview`
 - `GET /api/v1/admin/tenants`

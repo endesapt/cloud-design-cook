@@ -10,6 +10,7 @@
 3. API handlers must validate payloads through Zod.
 4. Server-side quota checks are mandatory before create/start actions.
 5. Deleted instances are preserved in audit-friendly state (`DELETED`) instead of hard delete.
+6. Docker mode must apply minimal runtime limits to each containerized VM.
 
 ## Architecture Invariants
 1. Route handlers coordinate transport and delegate domain logic.
@@ -21,3 +22,4 @@
 1. Mock provisioning delay remains in range 5–15 seconds.
 2. Reconcile runs in read/action paths so lifecycle advances without workers.
 3. Mock fail rate stays low and configurable via env.
+4. Docker container resources remain capped (`DOCKER_MIN_CPUS`, `DOCKER_MIN_MEMORY_MB`, `DOCKER_PIDS_LIMIT`).

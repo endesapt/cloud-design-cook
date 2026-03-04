@@ -10,17 +10,18 @@ This project demonstrates a conceptual IaaS provider with:
 - global admin panel;
 - strict multi-tenancy controls;
 - quota enforcement;
-- mock lifecycle for virtual instances.
+- container-backed virtual instance emulation.
 
 In scope:
 - Next.js fullstack app (App Router + Route Handlers);
 - PostgreSQL persistence through Prisma;
 - tenant network and security group logical model;
+- Docker-based VM emulation with low resource profile;
 - audit logs and demo-friendly UI.
 
 Out of scope:
 - real hypervisor integration;
-- Docker/Celery/Redis;
+- distributed worker orchestration;
 - production-grade SSO.
 
 ## 2. High-Level Architecture
@@ -36,8 +37,10 @@ Next.js App Router
 Domain Modules (src/lib/*)
   - auth / tenant / quota / provisioning
         |
+        +--> Docker Engine (container emulation)
+        |
         v
-Prisma Client
+      Prisma Client
         |
         v
 PostgreSQL
@@ -89,15 +92,20 @@ Enforcement points:
 API response for violations:
 - HTTP 409 with code `QUOTA_EXCEEDED`.
 
-## 7. Mock Provisioning Lifecycle
-No background worker is required.
+## 7. Provisioning Lifecycle (Docker + Mock Fallback)
+Primary mode:
+1. `PROVISION_MODE=docker` makes create/start/stop/reboot/delete call Docker Engine.
+2. Instance is backed by a real container (`mockRef` stores container ID).
+3. Runtime resources are intentionally minimal to allow multiple VMs per host:
+   - CPU: `0.10`
+   - Memory: `64MB`
+   - PIDs limit: `64`
+4. Requested resources are still represented by flavor/quota model for IaaS semantics.
 
-Flow:
-1. create/start/reboot transitions instance to `CREATING`;
-2. `readyAt` is assigned to `now + 5..15s`;
-3. reconcile is triggered by read/action APIs;
-4. when `readyAt <= now`, instance becomes `RUNNING` or `ERROR` (small fail rate);
-5. delete transitions to `DELETED` for audit continuity.
+Fallback mode:
+1. if Docker is unavailable and `DOCKER_FALLBACK_TO_MOCK=true`, provisioning falls back to mock lifecycle;
+2. mock transitions are handled via `readyAt` + reconcile on read/action APIs;
+3. delete still transitions to `DELETED` for audit continuity.
 
 ## 8. API Boundary and Error Model
 Transport layer:
@@ -124,7 +132,7 @@ Error schema:
 
 ## 10. Known Limitations and Post-MVP
 Known limitations:
-- mock provisioning only;
+- Docker emulation runs on single host (no scheduler);
 - no billing engine;
 - no object storage and no block volume API;
 - no production SSO.

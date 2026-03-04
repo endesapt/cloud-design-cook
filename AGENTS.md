@@ -16,7 +16,7 @@ Priorities: correctness of tenant isolation, quota enforcement, and strong demo 
 3. Cross-tenant foreign keys are forbidden.
 4. Quotas are enforced server-side before create/start actions.
 5. Mock provisioning must be deterministic enough for demo reliability.
-6. No Docker/Celery/Redis in MVP path.
+6. Docker-backed VM emulation is supported with strict minimal runtime limits.
 
 ## Architecture Boundaries
 1. `src/app/api/*` handles transport only (validation/authz/delegation).
