@@ -2,7 +2,7 @@
 
 - Status: active
 - Owner: platform-team
-- Last Verified: 2026-03-04
+- Last Verified: 2026-03-05
 
 ## 1. Purpose and Scope
 This project demonstrates a conceptual IaaS provider with:
@@ -136,7 +136,25 @@ Error schema:
 - tenant dashboard shows recent tenant operations;
 - admin overview shows global recent operations.
 
-## 10. Known Limitations and Post-MVP
+Security analytics extension:
+- audit entries include structured outcome/risk/resource metadata;
+- failed login attempts are tracked with masked identity and source hints;
+- alerts and remediation actions are persisted for deterministic UI replay.
+
+## 10. AI Security Copilot (Rule-Based Backend)
+The security center is presented as AI-driven UX, with deterministic backend logic:
+1. on-read refresh computes instance risk metrics and evaluates alert rules;
+2. alert pack includes auth anomaly, instance failure, quota pressure, and SG exposure;
+3. dedupe uses fingerprint (`tenantId + type + target + ruleKey`);
+4. stale signals auto-resolve from `OPEN/ACKNOWLEDGED` to `RESOLVED`;
+5. playbooks provide one-click actions (`STOP_INSTANCE`, `QUARANTINE_INSTANCE`, `RESTORE_INSTANCE_SG`, `SUGGEST_PASSWORD_RESET`).
+
+Tenant scope model:
+- tenant users view own tenant alerts only;
+- tenant admins and global admins can mutate alert status and execute playbooks;
+- support viewer remains read-only.
+
+## 11. Known Limitations and Post-MVP
 Known limitations:
 - Docker emulation runs on single host (no scheduler);
 - no billing engine;
@@ -148,7 +166,7 @@ Post-MVP roadmap:
 2. add billing and cost analytics;
 3. split services if needed (control plane decomposition).
 
-## 11. Demo Flow (5–7 minutes)
+## 12. Demo Flow (5–7 minutes)
 1. Login as tenant admin.
 2. Create network and security group.
 3. Create instance and observe `CREATING -> RUNNING`.
@@ -157,7 +175,7 @@ Post-MVP roadmap:
 6. Increase tenant quota.
 7. Return to tenant flow and create another instance.
 
-## 12. Acceptance Mapping
+## 13. Acceptance Mapping
 - tenant portal + admin panel available.
 - tenant isolation enforced on API and FK relations.
 - quota checks are server-side and visible in UI.

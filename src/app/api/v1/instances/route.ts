@@ -96,6 +96,8 @@ export async function POST(request: NextRequest) {
       tenantId,
       userId: session.userId,
       action: "CREATE_INSTANCE",
+      resourceType: "instance",
+      resourceId: instance.id,
       details: {
         instanceId: instance.id,
         name: instance.name,

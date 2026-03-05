@@ -7,6 +7,7 @@ import { requireTenantRead, requireTenantWrite } from "@/lib/auth/guards";
 import { assertTenantIsAccessible, resolveTenantScope } from "@/lib/tenant/scope";
 import { AppError, NotFoundError } from "@/lib/errors/app-error";
 import { hasDuplicateRule, validateRulePortRange } from "@/lib/security-groups/rules";
+import { writeOperationLog } from "@/lib/audit";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -93,6 +94,23 @@ export async function POST(request: NextRequest, { params }: Params) {
         portFrom: body.portFrom ?? null,
         portTo: body.portTo ?? null,
         cidr: body.cidr,
+      },
+    });
+
+    await writeOperationLog({
+      tenantId,
+      userId: session.userId,
+      action: "CREATE_SECURITY_GROUP_RULE",
+      resourceType: "security_group_rule",
+      resourceId: rule.id,
+      details: {
+        securityGroupId: sg.id,
+        ruleId: rule.id,
+        direction: rule.direction,
+        protocol: rule.protocol,
+        portFrom: rule.portFrom,
+        portTo: rule.portTo,
+        cidr: rule.cidr,
       },
     });
 

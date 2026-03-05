@@ -128,6 +128,8 @@ export async function POST(request: NextRequest) {
       tenantId: user.tenantId,
       userId: session.userId,
       action: "CREATE_USER",
+      resourceType: "user",
+      resourceId: user.id,
       details: {
         createdUserId: user.id,
         email: user.email,

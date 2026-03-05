@@ -45,6 +45,8 @@ export async function POST(request: NextRequest) {
       tenantId,
       userId: session.userId,
       action: "CREATE_NETWORK",
+      resourceType: "network",
+      resourceId: network.id,
       details: {
         networkId: network.id,
         name: network.name,

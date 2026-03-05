@@ -4,6 +4,7 @@ import { getSessionUserFromCookies } from "@/lib/auth/session";
 
 const items = [
   { href: "/admin/overview", label: "Overview" },
+  { href: "/admin/security-center", label: "Security Center" },
   { href: "/admin/tenants", label: "Tenants" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/support", label: "Support" },
@@ -22,7 +23,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const navItems =
     session.role === "support_viewer"
-      ? [{ href: "/admin/support", label: "Support" }]
+      ? [
+          { href: "/admin/security-center", label: "Security Center" },
+          { href: "/admin/support", label: "Support" },
+        ]
       : [...items];
 
   return (

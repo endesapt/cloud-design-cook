@@ -6,14 +6,16 @@ import { loginSchema } from "@/lib/api/schemas";
 import { apiError } from "@/lib/api/http";
 import { UnauthorizedError } from "@/lib/errors/app-error";
 import { AUTH_COOKIE, signSessionToken } from "@/lib/auth/token";
-import { writeOperationLog } from "@/lib/audit";
+import { buildAuditRequestContext, maskEmail, writeOperationLog } from "@/lib/audit";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await parseJson(request, loginSchema);
+    const requestContext = buildAuditRequestContext(request);
+    const normalizedEmail = body.email.toLowerCase();
 
     const user = await prisma.user.findUnique({
-      where: { email: body.email.toLowerCase() },
+      where: { email: normalizedEmail },
       select: {
         id: true,
         email: true,
@@ -25,11 +27,39 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
+      await writeOperationLog({
+        action: "LOGIN_FAILED",
+        outcome: "FAILURE",
+        riskLevel: "MEDIUM",
+        resourceType: "auth",
+        resourceId: maskEmail(normalizedEmail),
+        sourceIpMasked: requestContext.sourceIpMasked,
+        userAgent: requestContext.userAgent,
+        details: {
+          emailMasked: maskEmail(normalizedEmail),
+          reason: "USER_NOT_FOUND",
+        },
+      });
       throw new UnauthorizedError("Invalid email or password");
     }
 
     const isValid = await bcrypt.compare(body.password, user.passwordHash);
     if (!isValid) {
+      await writeOperationLog({
+        tenantId: user.tenantId,
+        userId: user.id,
+        action: "LOGIN_FAILED",
+        outcome: "FAILURE",
+        riskLevel: "HIGH",
+        resourceType: "auth",
+        resourceId: user.id,
+        sourceIpMasked: requestContext.sourceIpMasked,
+        userAgent: requestContext.userAgent,
+        details: {
+          emailMasked: maskEmail(user.email),
+          reason: "INVALID_PASSWORD",
+        },
+      });
       throw new UnauthorizedError("Invalid email or password");
     }
 
@@ -67,7 +97,13 @@ export async function POST(request: NextRequest) {
       tenantId: user.tenantId,
       userId: user.id,
       action: "LOGIN",
-      details: { email: user.email },
+      resourceType: "auth",
+      resourceId: user.id,
+      sourceIpMasked: requestContext.sourceIpMasked,
+      userAgent: requestContext.userAgent,
+      details: {
+        emailMasked: maskEmail(user.email),
+      },
     });
 
     return response;

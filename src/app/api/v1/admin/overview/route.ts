@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
 
     await reconcileInstancesGlobal();
 
-    const [instancesByStatus, flavors, recentOperations, tenantsCount] = await Promise.all([
+    const [instancesByStatus, flavors, recentOperations, tenantsCount, activeSecurityAlerts, criticalSecurityAlerts] =
+      await Promise.all([
       prisma.instance.groupBy({
         by: ["status"],
         _count: {
@@ -43,6 +44,23 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.tenant.count(),
+      prisma.securityAlert.count({
+        where: {
+          status: {
+            in: ["OPEN", "ACKNOWLEDGED"],
+          },
+        },
+      }),
+      prisma.securityAlert.count({
+        where: {
+          status: {
+            in: ["OPEN", "ACKNOWLEDGED"],
+          },
+          severity: {
+            in: ["HIGH", "CRITICAL"],
+          },
+        },
+      }),
     ]);
 
     const flavorMap = new Map(
@@ -70,9 +88,17 @@ export async function GET(request: NextRequest) {
       tenantsCount,
       statusSummary,
       flavorSummary,
+      securitySummary: {
+        activeAlerts: activeSecurityAlerts,
+        criticalAlerts: criticalSecurityAlerts,
+      },
       recentOperations: recentOperations.map((item) => ({
         id: item.id,
         action: item.action,
+        outcome: item.outcome,
+        riskLevel: item.riskLevel,
+        resourceType: item.resourceType,
+        resourceId: item.resourceId,
         createdAt: item.createdAt,
         tenant: item.tenant?.name ?? null,
         user: item.user?.email ?? null,

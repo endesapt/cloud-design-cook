@@ -18,6 +18,7 @@ export default async function TenantLayout({ children }: { children: React.React
 
   const items = [
     { href: "/dashboard", label: "Dashboard" },
+    { href: "/security-center", label: "Security Center" },
     { href: "/instances", label: "Instances" },
     { href: "/instances/new", label: "Create Instance" },
     { href: "/network", label: "Networks" },

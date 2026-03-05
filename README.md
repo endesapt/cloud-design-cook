@@ -5,7 +5,8 @@ Conceptual multi-tenant IaaS platform MVP with:
 - admin control panel,
 - logical network isolation model,
 - quota management,
-- Docker-backed VM emulation with mock fallback.
+- Docker-backed VM emulation with mock fallback,
+- AI Security Copilot (rule-based backend + remediation playbooks).
 
 ## Stack
 - Next.js (App Router) + TypeScript
@@ -79,10 +80,14 @@ This keeps host usage low so multiple VMs can run simultaneously.
   - `/instances/:id/edit`
 - Tenant user management:
   - `/users`
+- AI Security Center:
+  - `/security-center`
 
 ## Admin UI Notes
 - Global users management:
   - `/admin/users`
+- AI Security Center:
+  - `/admin/security-center`
 - Support context switch:
   - `/admin/support`
   - `/admin/support/:tenantId/instances`
@@ -96,6 +101,15 @@ This keeps host usage low so multiple VMs can run simultaneously.
 - `npm run test`
 - `npm run test:e2e`
 - `npm run docs:check`
+
+## Security Copilot Notes
+- Security signal refresh is on-read with per-tenant TTL.
+- Alert lifecycle is `OPEN -> ACKNOWLEDGED -> RESOLVED`.
+- Playbooks:
+  - `STOP_INSTANCE`
+  - `QUARANTINE_INSTANCE`
+  - `RESTORE_INSTANCE_SG`
+  - `SUGGEST_PASSWORD_RESET`
 
 ## Troubleshooting
 - `node: command not found`:

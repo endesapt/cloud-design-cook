@@ -2,7 +2,7 @@
 
 - Status: active
 - Owner: platform-team
-- Last Verified: 2026-03-04
+- Last Verified: 2026-03-05
 
 ## Primary Tables
 1. `tenants`: quota limits and organization metadata.
@@ -14,11 +14,16 @@
 7. `instances`: mock VM lifecycle records.
 8. `instance_security_groups`: many-to-many mapping.
 9. `operations_log`: audit trail.
+10. `security_alerts`: tenant-scoped detections with lifecycle.
+11. `instance_metric_snapshots`: deterministic instance risk snapshots.
+12. `security_alert_remediations`: execution log for playbooks.
+13. `tenant_security_state`: per-tenant refresh/cleanup checkpoints.
 
 ## Ownership Rules
 - Every tenant object has `tenantId`.
 - Cross-tenant links are blocked by API checks.
 - `flavors` are global and read-only in tenant flows.
+- security analytics entities are tenant-scoped and indexed by `tenantId`.
 
 ## Lifecycle Columns
 `instances` stores:
@@ -30,6 +35,16 @@
 
 `tenants` stores:
 - `status` (`ACTIVE|DELETING`) for async force-delete lifecycle.
+
+`security_alerts` stores:
+- `type` (`AUTH_ANOMALY|INSTANCE_FAILURE|QUOTA_PRESSURE|SG_EXPOSURE`);
+- `severity` (`LOW|MEDIUM|HIGH|CRITICAL`);
+- `status` (`OPEN|ACKNOWLEDGED|RESOLVED`);
+- `fingerprint` for dedupe and safe auto-resolve.
+
+`operations_log` stores:
+- structured `outcome`, `riskLevel`, `resourceType`, `resourceId`;
+- masked source context (`sourceIpMasked`, `userAgent`).
 
 ## Quota Inputs
 Resource usage derives from instance flavor dimensions:

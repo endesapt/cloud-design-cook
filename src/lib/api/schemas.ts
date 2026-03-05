@@ -102,3 +102,20 @@ export const updateUserSchema = z
 export const resetUserPasswordSchema = z.object({
   password: z.string().min(8).max(128),
 });
+
+export const securityAlertStatusSchema = z.enum(["OPEN", "ACKNOWLEDGED", "RESOLVED"]);
+
+export const updateSecurityAlertStatusSchema = z.object({
+  status: securityAlertStatusSchema,
+});
+
+export const securityPlaybookSchema = z.enum([
+  "STOP_INSTANCE",
+  "QUARANTINE_INSTANCE",
+  "RESTORE_INSTANCE_SG",
+  "SUGGEST_PASSWORD_RESET",
+]);
+
+export const executeSecurityPlaybookSchema = z.object({
+  playbook: securityPlaybookSchema,
+});

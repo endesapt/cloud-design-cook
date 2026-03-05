@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Activity, Cpu, HardDrive, MemoryStick } from "lucide-react";
 import { toast } from "sonner";
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/domain/metric-card";
 import { PageHeader } from "@/components/layout/page-header";
 import { LogoutButton } from "@/components/domain/logout-button";
+import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/client/api";
 
 type QuotaReport = {
@@ -22,9 +24,19 @@ type ActivityItem = {
   details: Record<string, unknown>;
 };
 
+type SecurityOverview = {
+  summary: {
+    openAlerts: number;
+    criticalOpenAlerts: number;
+    quotaPressurePct: number;
+  };
+  lastEvaluatedAt: string | null;
+};
+
 export default function DashboardPage() {
   const [quota, setQuota] = useState<QuotaReport | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [securityOverview, setSecurityOverview] = useState<SecurityOverview | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,10 +46,14 @@ export default function DashboardPage() {
   async function load() {
     try {
       setLoading(true);
-      const quotaReport = await apiFetch<QuotaReport>("/api/v1/quota");
-      const activityFeed = await apiFetch<ActivityItem[]>("/api/v1/logs");
+      const [quotaReport, activityFeed, security] = await Promise.all([
+        apiFetch<QuotaReport>("/api/v1/quota"),
+        apiFetch<ActivityItem[]>("/api/v1/logs"),
+        apiFetch<SecurityOverview>("/api/v1/security/overview"),
+      ]);
       setQuota(quotaReport);
       setActivity(activityFeed);
+      setSecurityOverview(security);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load dashboard");
     } finally {
@@ -120,6 +136,27 @@ export default function DashboardPage() {
               ))}
             </ul>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6 border-[--line-strong]">
+        <CardHeader>
+          <CardTitle className="text-base">AI Security Snapshot</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-[--ink-1]">
+              Open alerts: {securityOverview?.summary.openAlerts ?? 0} | Critical:{" "}
+              {securityOverview?.summary.criticalOpenAlerts ?? 0}
+            </p>
+            <p className="text-xs text-[--ink-3]">
+              Last evaluation:{" "}
+              {securityOverview?.lastEvaluatedAt ? new Date(securityOverview.lastEvaluatedAt).toLocaleString() : "n/a"}
+            </p>
+          </div>
+          <Button asChild size="sm">
+            <Link href="/security-center">Open Security Center</Link>
+          </Button>
         </CardContent>
       </Card>
 

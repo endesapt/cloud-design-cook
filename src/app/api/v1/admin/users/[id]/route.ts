@@ -117,6 +117,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       tenantId: updated.tenantId,
       userId: session.userId,
       action: "UPDATE_USER",
+      resourceType: "user",
+      resourceId: updated.id,
       details: {
         targetUserId: updated.id,
         before: {
@@ -156,6 +158,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       tenantId: existing.tenantId,
       userId: session.userId,
       action: "DELETE_USER",
+      riskLevel: "MEDIUM",
+      resourceType: "user",
+      resourceId: existing.id,
       details: {
         targetUserId: existing.id,
         email: existing.email,

@@ -2,7 +2,7 @@
 
 - Status: active
 - Owner: platform-team
-- Last Verified: 2026-03-04
+- Last Verified: 2026-03-05
 
 ## Auth
 - `POST /api/v1/auth/login` body `{ email, password }` -> sets httpOnly cookie, returns user profile.
@@ -36,6 +36,10 @@ Roles:
 - `GET /api/v1/instances/:id`
 - `PATCH /api/v1/instances/:id` body `{ name?, flavorId?, securityGroupIds? }`
 - `POST /api/v1/instances/:id/action` body `{ action: start|stop|reboot|delete }`
+- `GET /api/v1/security/overview`
+- `GET /api/v1/security/alerts?status=OPEN&severity=HIGH`
+- `PATCH /api/v1/security/alerts/:id` body `{ status: OPEN|ACKNOWLEDGED|RESOLVED }`
+- `POST /api/v1/security/alerts/:id/playbook` body `{ playbook: STOP_INSTANCE|QUARANTINE_INSTANCE|RESTORE_INSTANCE_SG|SUGGEST_PASSWORD_RESET }`
 - `GET /api/v1/users`
 - `POST /api/v1/users` body `{ email, fullName, role, password, tenantId? }`
 - `GET /api/v1/users/:id`
@@ -52,6 +56,9 @@ Instance behavior notes:
 
 ## Admin APIs
 - `GET /api/v1/admin/overview`
+- `GET /api/v1/admin/security/overview`
+- `GET /api/v1/admin/security/overview?tenantId=:id`
+- `GET /api/v1/admin/security/alerts?tenantId=:id`
 - `GET /api/v1/admin/tenants`
 - `POST /api/v1/admin/tenants`
 - `GET /api/v1/admin/tenants/:id`
@@ -91,6 +98,11 @@ All non-2xx responses use:
 - `TENANT_DELETING` (409)
 - `LAST_TENANT_ADMIN` (409)
 - `ROLE_SCOPE_VIOLATION` (403/409)
+
+Security notes:
+- signal engine refresh is on-read with tenant TTL;
+- alert lifecycle is `OPEN -> ACKNOWLEDGED -> RESOLVED` (manual or auto-resolve);
+- support viewer is read-only and cannot execute playbooks.
 
 Tenant session note:
 - If the DB was reset/reseeded and the cookie points to a removed tenant, tenant APIs (including `/api/v1/quota`, `/api/v1/logs`, and `/api/v1/activity`) return `UNAUTHORIZED` and the session cookie is cleared.

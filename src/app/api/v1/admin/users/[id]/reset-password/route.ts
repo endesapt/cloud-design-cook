@@ -37,6 +37,9 @@ export async function POST(request: NextRequest, { params }: Params) {
       tenantId: existing.tenantId,
       userId: session.userId,
       action: "RESET_USER_PASSWORD",
+      riskLevel: "HIGH",
+      resourceType: "user",
+      resourceId: existing.id,
       details: {
         targetUserId: existing.id,
         email: existing.email,

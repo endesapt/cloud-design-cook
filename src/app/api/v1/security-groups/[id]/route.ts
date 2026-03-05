@@ -6,6 +6,7 @@ import { updateSecurityGroupSchema } from "@/lib/api/schemas";
 import { requireTenantRead, requireTenantWrite } from "@/lib/auth/guards";
 import { assertTenantIsAccessible, resolveTenantScope } from "@/lib/tenant/scope";
 import { AppError, NotFoundError } from "@/lib/errors/app-error";
+import { writeOperationLog } from "@/lib/audit";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -47,7 +48,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const existing = await prisma.securityGroup.findFirst({
       where: { id, tenantId },
-      select: { id: true },
+      select: { id: true, name: true, description: true },
     });
 
     if (!existing) {
@@ -67,6 +68,25 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       },
     });
 
+    await writeOperationLog({
+      tenantId,
+      userId: session.userId,
+      action: "UPDATE_SECURITY_GROUP",
+      resourceType: "security_group",
+      resourceId: updated.id,
+      details: {
+        securityGroupId: updated.id,
+        before: {
+          name: existing.name,
+          description: existing.description,
+        },
+        after: {
+          name: updated.name,
+          description: updated.description,
+        },
+      },
+    });
+
     return apiOk(updated);
   } catch (error) {
     return apiError(error);
@@ -82,7 +102,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
     const existing = await prisma.securityGroup.findFirst({
       where: { id, tenantId },
-      select: { id: true },
+      select: { id: true, name: true, description: true },
     });
 
     if (!existing) {
@@ -99,6 +119,20 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
     await prisma.securityGroup.delete({
       where: { id: existing.id },
+    });
+
+    await writeOperationLog({
+      tenantId,
+      userId: session.userId,
+      action: "DELETE_SECURITY_GROUP",
+      riskLevel: "MEDIUM",
+      resourceType: "security_group",
+      resourceId: existing.id,
+      details: {
+        securityGroupId: existing.id,
+        name: existing.name,
+        description: existing.description,
+      },
     });
 
     return apiOk({ deleted: true });

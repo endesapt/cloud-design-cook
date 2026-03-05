@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
       tenantId,
       userId: session.userId,
       action: "CREATE_SECURITY_GROUP",
+      resourceType: "security_group",
+      resourceId: securityGroup.id,
       details: {
         securityGroupId: securityGroup.id,
         name: securityGroup.name,

@@ -2,7 +2,7 @@
 
 - Status: active
 - Owner: platform-team
-- Last Verified: 2026-03-04
+- Last Verified: 2026-03-05
 
 ## Security Invariants
 1. A non-admin user cannot read or mutate data outside `session.tenantId`.
@@ -14,15 +14,19 @@
 7. Server-side quota checks are mandatory before create/start/resize actions.
 8. Tenant force-delete must move tenant to `DELETING` and complete via reconcile.
 9. Docker mode must apply minimal runtime limits to each containerized VM.
+10. `support_viewer` and `tenant_user` cannot mutate security alerts or execute playbooks.
+11. Security alerts and metric snapshots are tenant-scoped and cannot be read cross-tenant.
 
 ## Architecture Invariants
 1. Route handlers coordinate transport and delegate domain logic.
 2. Business rules remain in `src/lib/*` modules.
 3. Prisma is the only DB access layer.
 4. UI must consume contracts; no hidden business logic in presentation components.
+5. Security detection/playbook logic stays inside `src/lib/security/*`.
 
 ## Demo Reliability Invariants
 1. Mock provisioning delay remains in range 5–15 seconds.
 2. Reconcile runs in read/action paths so lifecycle advances without workers.
 3. Mock fail rate stays low and configurable via env.
 4. Docker container resources remain capped (`DOCKER_MIN_CPUS`, `DOCKER_MIN_MEMORY_MB`, `DOCKER_PIDS_LIMIT`).
+5. Security signal refresh is on-read with bounded TTL per tenant.

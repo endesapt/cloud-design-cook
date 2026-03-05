@@ -23,6 +23,12 @@ export async function GET(request: NextRequest) {
       operations.map((item) => ({
         id: item.id,
         action: item.action,
+        outcome: item.outcome,
+        riskLevel: item.riskLevel,
+        resourceType: item.resourceType,
+        resourceId: item.resourceId,
+        sourceIpMasked: item.sourceIpMasked,
+        userAgent: item.userAgent,
         details: item.details,
         createdAt: item.createdAt,
         user: item.user?.email ?? null,

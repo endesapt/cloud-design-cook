@@ -37,53 +37,115 @@ enum RuleDirection {
 
 enum OperationAction {
   LOGIN
+  LOGIN_FAILED
   LOGOUT
   CREATE_INSTANCE
   UPDATE_INSTANCE
   INSTANCE_ACTION
   CREATE_NETWORK
   CREATE_SECURITY_GROUP
+  UPDATE_SECURITY_GROUP
+  DELETE_SECURITY_GROUP
+  CREATE_SECURITY_GROUP_RULE
+  UPDATE_SECURITY_GROUP_RULE
+  DELETE_SECURITY_GROUP_RULE
   CREATE_USER
   UPDATE_USER
   DELETE_USER
   RESET_USER_PASSWORD
+  CREATE_TENANT
   UPDATE_TENANT_QUOTA
   DELETE_TENANT
   FORCE_DELETE_TENANT
+  SECURITY_ALERT_STATUS_UPDATE
+  SECURITY_PLAYBOOK_EXECUTION
+}
+
+enum OperationOutcome {
+  SUCCESS
+  FAILURE
+  WARNING
+}
+
+enum AuditRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SecurityAlertType {
+  AUTH_ANOMALY
+  INSTANCE_FAILURE
+  QUOTA_PRESSURE
+  SG_EXPOSURE
+}
+
+enum SecurityAlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SecurityAlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum SecurityPlaybook {
+  STOP_INSTANCE
+  QUARANTINE_INSTANCE
+  RESTORE_INSTANCE_SG
+  SUGGEST_PASSWORD_RESET
+}
+
+enum RemediationStatus {
+  PENDING
+  EXECUTED
+  FAILED
 }
 
 model Tenant {
-  id          String          @id @default(uuid()) @db.Uuid
-  name        String
-  slug        String          @unique
-  description String?
-  status      TenantStatus    @default(ACTIVE)
-  maxVms      Int             @default(3)
-  maxVcpus    Int             @default(6)
-  maxRamMb    Int             @default(12288)
-  maxDiskGb   Int             @default(120)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  users       User[]
-  networks    Network[]
-  secGroups   SecurityGroup[]
-  instances   Instance[]
-  operations  OperationLog[]
+  id              String                   @id @default(uuid()) @db.Uuid
+  name            String
+  slug            String                   @unique
+  description     String?
+  status          TenantStatus             @default(ACTIVE)
+  maxVms          Int                      @default(3)
+  maxVcpus        Int                      @default(6)
+  maxRamMb        Int                      @default(12288)
+  maxDiskGb       Int                      @default(120)
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  users           User[]
+  networks        Network[]
+  secGroups       SecurityGroup[]
+  instances       Instance[]
+  operations      OperationLog[]
+  securityAlerts  SecurityAlert[]
+  metricSnapshots InstanceMetricSnapshot[]
+  remediations    SecurityAlertRemediation[]
+  securityState   TenantSecurityState?
 
   @@map("tenants")
 }
 
 model User {
-  id           String         @id @default(uuid()) @db.Uuid
-  email        String         @unique
-  passwordHash String
-  fullName     String
-  role         UserRole
-  tenantId     String?        @db.Uuid
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  tenant       Tenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  operations   OperationLog[]
+  id                   String                      @id @default(uuid()) @db.Uuid
+  email                String                      @unique
+  passwordHash         String
+  fullName             String
+  role                 UserRole
+  tenantId             String?                     @db.Uuid
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
+  tenant               Tenant?                     @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  operations           OperationLog[]
+  acknowledgedAlerts   SecurityAlert[]             @relation("AlertAcknowledgedBy")
+  resolvedAlerts       SecurityAlert[]             @relation("AlertResolvedBy")
+  securityRemediations SecurityAlertRemediation[]  @relation("AlertRemediationRequestedBy")
 
   @@index([tenantId])
   @@map("users")
@@ -147,22 +209,23 @@ model SecurityGroupRule {
 }
 
 model Instance {
-  id             String                  @id @default(uuid()) @db.Uuid
-  tenantId       String                  @db.Uuid
-  name           String
-  flavorId       String                  @db.Uuid
-  networkId      String                  @db.Uuid
-  status         InstanceStatus
-  ipv4           String?
-  mockRef        String?
-  readyAt        DateTime?
-  failReason     String?
-  createdAt      DateTime                @default(now())
-  updatedAt      DateTime                @updatedAt
-  tenant         Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  flavor         Flavor                  @relation(fields: [flavorId], references: [id])
-  network        Network                 @relation(fields: [networkId], references: [id])
-  securityGroups InstanceSecurityGroup[]
+  id              String                   @id @default(uuid()) @db.Uuid
+  tenantId        String                   @db.Uuid
+  name            String
+  flavorId        String                   @db.Uuid
+  networkId       String                   @db.Uuid
+  status          InstanceStatus
+  ipv4            String?
+  mockRef         String?
+  readyAt         DateTime?
+  failReason      String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  tenant          Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  flavor          Flavor                   @relation(fields: [flavorId], references: [id])
+  network         Network                  @relation(fields: [networkId], references: [id])
+  securityGroups  InstanceSecurityGroup[]
+  metricSnapshots InstanceMetricSnapshot[]
 
   @@index([tenantId, status])
   @@index([flavorId])
@@ -183,16 +246,119 @@ model InstanceSecurityGroup {
 }
 
 model OperationLog {
-  id        String          @id @default(uuid()) @db.Uuid
-  tenantId  String?         @db.Uuid
-  userId    String?         @db.Uuid
-  action    OperationAction
-  details   Json
-  createdAt DateTime        @default(now())
-  tenant    Tenant?         @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  user      User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id             String           @id @default(uuid()) @db.Uuid
+  tenantId       String?          @db.Uuid
+  userId         String?          @db.Uuid
+  action         OperationAction
+  outcome        OperationOutcome @default(SUCCESS)
+  riskLevel      AuditRiskLevel   @default(LOW)
+  resourceType   String?
+  resourceId     String?
+  sourceIpMasked String?
+  userAgent      String?
+  details        Json             @default("{}")
+  createdAt      DateTime         @default(now())
+  tenant         Tenant?          @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  user           User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, createdAt])
+  @@index([tenantId, action, createdAt])
+  @@index([tenantId, outcome, createdAt])
   @@index([userId, createdAt])
   @@map("operations_log")
+}
+
+model SecurityAlert {
+  id               String                @id @default(uuid()) @db.Uuid
+  tenantId         String                @db.Uuid
+  type             SecurityAlertType
+  severity         SecurityAlertSeverity
+  status           SecurityAlertStatus   @default(OPEN)
+  title            String
+  description      String
+  targetType       String
+  targetId         String
+  ruleKey          String
+  fingerprint      String                @unique
+  details          Json                  @default("{}")
+  firstSeenAt      DateTime              @default(now())
+  lastSeenAt       DateTime              @default(now())
+  lastEvaluatedAt  DateTime              @default(now())
+  acknowledgedAt   DateTime?
+  acknowledgedById String?               @db.Uuid
+  resolvedAt       DateTime?
+  resolvedById     String?               @db.Uuid
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  tenant           Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  acknowledgedBy   User?                 @relation("AlertAcknowledgedBy", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+  resolvedBy       User?                 @relation("AlertResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  remediations     SecurityAlertRemediation[]
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status, severity])
+  @@index([tenantId, type, status])
+  @@index([tenantId, targetType, targetId])
+  @@index([tenantId, lastSeenAt])
+  @@map("security_alerts")
+}
+
+model InstanceMetricSnapshot {
+  id               String         @id @default(uuid()) @db.Uuid
+  tenantId         String         @db.Uuid
+  instanceId       String         @db.Uuid
+  bucketStart      DateTime
+  status           InstanceStatus
+  cpuPct           Int
+  memoryPct        Int
+  diskPct          Int
+  riskScore        Int
+  quotaPressurePct Int
+  errorEvents30m   Int
+  churnEvents30m   Int
+  createdAt        DateTime       @default(now())
+  tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  instance         Instance       @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+
+  @@unique([instanceId, bucketStart])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, instanceId, createdAt])
+  @@map("instance_metric_snapshots")
+}
+
+model SecurityAlertRemediation {
+  id             String            @id @default(uuid()) @db.Uuid
+  tenantId       String            @db.Uuid
+  alertId        String            @db.Uuid
+  targetType     String
+  targetId       String
+  playbook       SecurityPlaybook
+  status         RemediationStatus @default(PENDING)
+  idempotencyKey String            @unique
+  requestedById  String?           @db.Uuid
+  executedAt     DateTime?
+  errorMessage   String?
+  snapshot       Json              @default("{}")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alert          SecurityAlert     @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  requestedBy    User?             @relation("AlertRemediationRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([alertId, createdAt])
+  @@index([tenantId, targetType, targetId])
+  @@map("security_alert_remediations")
+}
+
+model TenantSecurityState {
+  tenantId           String   @id @db.Uuid
+  lastEvaluatedAt    DateTime?
+  lastCleanupAt      DateTime?
+  lastEvaluationError String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_security_state")
 }

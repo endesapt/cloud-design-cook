@@ -7,6 +7,7 @@ import { requireTenantWrite } from "@/lib/auth/guards";
 import { assertTenantIsAccessible, resolveTenantScope } from "@/lib/tenant/scope";
 import { AppError, NotFoundError } from "@/lib/errors/app-error";
 import { hasDuplicateRule, validateRulePortRange } from "@/lib/security-groups/rules";
+import { writeOperationLog } from "@/lib/audit";
 
 type Params = {
   params: Promise<{ id: string; ruleId: string }>;
@@ -75,6 +76,32 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       },
     });
 
+    await writeOperationLog({
+      tenantId,
+      userId: session.userId,
+      action: "UPDATE_SECURITY_GROUP_RULE",
+      resourceType: "security_group_rule",
+      resourceId: updated.id,
+      details: {
+        securityGroupId: sg.id,
+        ruleId: updated.id,
+        before: {
+          direction: existingRule.direction,
+          protocol: existingRule.protocol,
+          portFrom: existingRule.portFrom,
+          portTo: existingRule.portTo,
+          cidr: existingRule.cidr,
+        },
+        after: {
+          direction: updated.direction,
+          protocol: updated.protocol,
+          portFrom: updated.portFrom,
+          portTo: updated.portTo,
+          cidr: updated.cidr,
+        },
+      },
+    });
+
     return apiOk(updated);
   } catch (error) {
     return apiError(error);
@@ -97,16 +124,38 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       throw new NotFoundError("Security group not found");
     }
 
-    const deleted = await prisma.securityGroupRule.deleteMany({
+    const existingRule = await prisma.securityGroupRule.findFirst({
       where: {
         id: ruleId,
         securityGroupId: sg.id,
       },
     });
 
-    if (deleted.count === 0) {
+    if (!existingRule) {
       throw new NotFoundError("Security group rule not found");
     }
+
+    await prisma.securityGroupRule.delete({
+      where: { id: existingRule.id },
+    });
+
+    await writeOperationLog({
+      tenantId,
+      userId: session.userId,
+      action: "DELETE_SECURITY_GROUP_RULE",
+      riskLevel: "MEDIUM",
+      resourceType: "security_group_rule",
+      resourceId: existingRule.id,
+      details: {
+        securityGroupId: sg.id,
+        ruleId: existingRule.id,
+        direction: existingRule.direction,
+        protocol: existingRule.protocol,
+        portFrom: existingRule.portFrom,
+        portTo: existingRule.portTo,
+        cidr: existingRule.cidr,
+      },
+    });
 
     return apiOk({ deleted: true });
   } catch (error) {

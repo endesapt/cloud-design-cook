@@ -6,6 +6,7 @@ import { parseJson } from "@/lib/api/parse";
 import { createTenantSchema } from "@/lib/api/schemas";
 import { requireAdminRead, requireAdminWrite } from "@/lib/auth/guards";
 import { reconcileDeletingTenants } from "@/lib/provisioning/reconcile";
+import { writeOperationLog } from "@/lib/audit";
 
 const usageStatuses: InstanceStatus[] = [
   InstanceStatus.CREATING,
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    requireAdminWrite(request);
+    const session = requireAdminWrite(request);
     const body = await parseJson(request, createTenantSchema);
 
     const tenant = await prisma.tenant.create({
@@ -96,6 +97,20 @@ export async function POST(request: NextRequest) {
         maxVcpus: body.maxVcpus,
         maxRamMb: body.maxRamMb,
         maxDiskGb: body.maxDiskGb,
+      },
+    });
+
+    await writeOperationLog({
+      tenantId: tenant.id,
+      userId: session.userId,
+      action: "CREATE_TENANT",
+      riskLevel: "MEDIUM",
+      resourceType: "tenant",
+      resourceId: tenant.id,
+      details: {
+        tenantId: tenant.id,
+        slug: tenant.slug,
+        name: tenant.name,
       },
     });
 

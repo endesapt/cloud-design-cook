@@ -55,6 +55,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       tenantId: id,
       userId: session.userId,
       action: "UPDATE_TENANT_QUOTA",
+      resourceType: "tenant",
+      resourceId: id,
       details: {
         before: {
           maxVms: existing.maxVms,
@@ -119,6 +121,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         tenantId: id,
         userId: session.userId,
         action: "DELETE_TENANT",
+        riskLevel: "HIGH",
+        resourceType: "tenant",
+        resourceId: id,
         details: {
           mode: "safe-delete",
         },
@@ -153,6 +158,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         tenantId: id,
         userId: session.userId,
         action: "FORCE_DELETE_TENANT",
+        riskLevel: "CRITICAL",
+        resourceType: "tenant",
+        resourceId: id,
         details: {
           mode: "force-delete",
           summary,

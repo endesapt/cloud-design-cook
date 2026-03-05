@@ -82,3 +82,68 @@ export type UserDto = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type SecurityAlertStatus = "OPEN" | "ACKNOWLEDGED" | "RESOLVED";
+export type SecurityAlertSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export type SecurityAlertType = "AUTH_ANOMALY" | "INSTANCE_FAILURE" | "QUOTA_PRESSURE" | "SG_EXPOSURE";
+
+export type SecurityAlertDto = {
+  id: string;
+  tenantId: string;
+  tenantName?: string;
+  tenantSlug?: string;
+  type: SecurityAlertType;
+  severity: SecurityAlertSeverity;
+  status: SecurityAlertStatus;
+  title: string;
+  description: string;
+  targetType: string;
+  targetId: string;
+  ruleKey: string;
+  details: Record<string, unknown>;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  acknowledgedAt: string | null;
+  acknowledgedBy: string | null;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type InstanceRiskMetricDto = {
+  instanceId: string;
+  status: InstanceStatus;
+  bucketStart: string;
+  cpuPct: number;
+  memoryPct: number;
+  diskPct: number;
+  riskScore: number;
+  quotaPressurePct: number;
+  errorEvents30m: number;
+  churnEvents30m: number;
+  createdAt: string;
+};
+
+export type SecurityOverviewDto = {
+  summary: {
+    openAlerts: number;
+    acknowledgedAlerts: number;
+    resolvedLast24h: number;
+    criticalOpenAlerts: number;
+    riskyInstances: number;
+    quotaPressurePct: number;
+  };
+  metrics: InstanceRiskMetricDto[];
+  alerts: SecurityAlertDto[];
+  lastEvaluatedAt: string | null;
+  lastEvaluationError: string | null;
+};
+
+export type PlaybookRequestDto = {
+  playbook: "STOP_INSTANCE" | "QUARANTINE_INSTANCE" | "RESTORE_INSTANCE_SG" | "SUGGEST_PASSWORD_RESET";
+};
+
+export type AlertStatusPatchDto = {
+  status: SecurityAlertStatus;
+};

@@ -107,6 +107,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       tenantId: existing.tenantId,
       userId: session.userId,
       action: "UPDATE_INSTANCE",
+      resourceType: "instance",
+      resourceId: existing.id,
       details: {
         instanceId: existing.id,
         before: {

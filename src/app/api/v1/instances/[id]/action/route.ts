@@ -114,6 +114,9 @@ export async function POST(request: NextRequest, { params }: Params) {
       tenantId: instance.tenantId,
       userId: session.userId,
       action: "INSTANCE_ACTION",
+      riskLevel: body.action === "delete" ? "MEDIUM" : "LOW",
+      resourceType: "instance",
+      resourceId: instance.id,
       details: {
         instanceId: instance.id,
         action: body.action,
