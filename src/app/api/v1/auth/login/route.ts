@@ -7,6 +7,7 @@ import { apiError } from "@/lib/api/http";
 import { UnauthorizedError } from "@/lib/errors/app-error";
 import { AUTH_COOKIE, signSessionToken } from "@/lib/auth/token";
 import { buildAuditRequestContext, maskEmail, writeOperationLog } from "@/lib/audit";
+import { refreshTenantSecuritySignalsBestEffort } from "@/lib/security/live-refresh";
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,6 +61,9 @@ export async function POST(request: NextRequest) {
           reason: "INVALID_PASSWORD",
         },
       });
+      if (user.tenantId) {
+        await refreshTenantSecuritySignalsBestEffort(user.tenantId);
+      }
       throw new UnauthorizedError("Invalid email or password");
     }
 

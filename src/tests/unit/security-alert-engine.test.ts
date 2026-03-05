@@ -29,6 +29,28 @@ describe("security alert engine", () => {
     expect(quotaAlert?.severity).toBe("HIGH");
   });
 
+  it("triggers quota pressure alert at 85% boundary", () => {
+    const at84 = buildSecurityAlertCandidates({
+      tenantId: "tenant-1",
+      failedLogins: 0,
+      quotaPressurePct: 84,
+      errorInstances: [],
+      failureBursts: [],
+      securityGroupSignals: [],
+    });
+    const at85 = buildSecurityAlertCandidates({
+      tenantId: "tenant-1",
+      failedLogins: 0,
+      quotaPressurePct: 85,
+      errorInstances: [],
+      failureBursts: [],
+      securityGroupSignals: [],
+    });
+
+    expect(at84.some((candidate) => candidate.type === "QUOTA_PRESSURE")).toBe(false);
+    expect(at85.some((candidate) => candidate.type === "QUOTA_PRESSURE")).toBe(true);
+  });
+
   it("creates SG exposure alert for exposed security group", () => {
     const candidates = buildSecurityAlertCandidates({
       tenantId: "tenant-1",

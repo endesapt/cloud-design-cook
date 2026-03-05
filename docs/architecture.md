@@ -143,10 +143,10 @@ Security analytics extension:
 
 ## 10. AI Security Copilot (Rule-Based Backend)
 The security center is presented as AI-driven UX, with deterministic backend logic:
-1. on-read refresh computes instance risk metrics and evaluates alert rules;
+1. security endpoints perform force refresh to compute current metrics and alerts on demand;
 2. alert pack includes auth anomaly, instance failure, quota pressure, and SG exposure;
 3. dedupe uses fingerprint (`tenantId + type + target + ruleKey`);
-4. in demo mode (`SECURITY_DEMO_FREEZE=true`), each tenant freezes after first detected signal and remains static until admin reset;
+4. in optional demo mode (`SECURITY_DEMO_FREEZE=true`), each tenant freezes after first detected signal and remains static until admin reset;
 5. stale signals auto-resolve from `OPEN/ACKNOWLEDGED` to `RESOLVED` only while tenant is not demo-frozen;
 6. playbooks provide one-click actions (`STOP_INSTANCE`, `QUARANTINE_INSTANCE`, `RESTORE_INSTANCE_SG`, `SUGGEST_PASSWORD_RESET`, `SUGGEST_ACCESS_LOCKDOWN`, `SUGGEST_SG_HARDENING`, `SUGGEST_CAPACITY_RIGHTSIZING`, `SUGGEST_INSTANCE_DIAGNOSTICS`).
 

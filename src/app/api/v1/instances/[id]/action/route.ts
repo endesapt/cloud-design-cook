@@ -18,6 +18,7 @@ import {
 } from "@/lib/provisioning/reconcile";
 import { writeOperationLog } from "@/lib/audit";
 import { NotFoundError } from "@/lib/errors/app-error";
+import { refreshTenantSecuritySignalsBestEffort } from "@/lib/security/live-refresh";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -125,6 +126,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         mode: dockerProvisioningEnabled() ? "docker" : "mock",
       },
     });
+
+    await refreshTenantSecuritySignalsBestEffort(instance.tenantId);
 
     return apiOk(updated);
   } catch (error) {

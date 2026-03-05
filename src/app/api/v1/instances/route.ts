@@ -14,6 +14,7 @@ import {
   scheduleProvisioning,
 } from "@/lib/provisioning/reconcile";
 import { writeOperationLog } from "@/lib/audit";
+import { refreshTenantSecuritySignalsBestEffort } from "@/lib/security/live-refresh";
 
 type StatusQuery = InstanceStatus | undefined;
 
@@ -104,6 +105,8 @@ export async function POST(request: NextRequest) {
         mode: dockerProvisioningEnabled() ? "docker" : "mock",
       },
     });
+
+    await refreshTenantSecuritySignalsBestEffort(tenantId);
 
     const fullInstance = await prisma.instance.findUnique({
       where: { id: instance.id },

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     if (tenantId) {
       await assertTenantIsAccessible(session, tenantId);
-      await refreshTenantSecuritySignals(tenantId);
+      await refreshTenantSecuritySignals(tenantId, { force: true });
 
       const [tenant, overview] = await Promise.all([
         prisma.tenant.findUnique({

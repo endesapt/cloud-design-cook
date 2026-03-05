@@ -101,8 +101,8 @@ All non-2xx responses use:
 - `ROLE_SCOPE_VIOLATION` (403/409)
 
 Security notes:
-- signal engine refresh is on-read with tenant TTL;
-- when `SECURITY_DEMO_FREEZE=true`, tenant signals freeze after first detection until admin reset;
+- signal engine refresh is on-read for security endpoints and is force-refreshed after key mutate events (instance create/action, failed login);
+- `SECURITY_DEMO_FREEZE` is optional and defaults to `false`; when enabled, tenant signals freeze after first detection until admin reset;
 - alert lifecycle is `OPEN -> ACKNOWLEDGED -> RESOLVED` (manual or auto-resolve);
 - support viewer is read-only and cannot execute playbooks.
 

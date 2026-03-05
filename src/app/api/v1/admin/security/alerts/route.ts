@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     if (tenantId) {
       await assertTenantIsAccessible(session, tenantId);
-      await refreshTenantSecuritySignals(tenantId);
+      await refreshTenantSecuritySignals(tenantId, { force: true });
     }
 
     const alerts = await listAdminSecurityAlerts({
