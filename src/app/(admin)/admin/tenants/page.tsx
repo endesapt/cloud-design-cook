@@ -10,11 +10,19 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/client/api";
 import type { TenantSummaryDto } from "@/lib/types";
+import { quotaTone, quotaToneLabel } from "@/lib/ui/quota";
 
 function ratio(current: number, max: number) {
   if (max <= 0) return 0;
-  return Math.round((current / max) * 100);
+  return Math.max(0, Math.min(100, Math.round((current / max) * 100)));
 }
+
+const toneClassName = {
+  safe: "text-[--state-safe]",
+  watch: "text-[--state-watch]",
+  warning: "text-[--state-warning]",
+  critical: "text-[--state-critical]",
+} as const;
 
 export default function AdminTenantsPage() {
   const [tenants, setTenants] = useState<TenantSummaryDto[]>([]);
@@ -77,40 +85,84 @@ export default function AdminTenantsPage() {
 
                   <div className="grid gap-3 md:grid-cols-2">
                     <div>
-                      <div className="mb-1 flex justify-between text-xs text-[--ink-2]">
-                        <span>VMs</span>
-                        <span>
-                          {tenant.usage.usedVms}/{tenant.quotas.maxVms}
-                        </span>
-                      </div>
-                      <Progress value={ratio(tenant.usage.usedVms, tenant.quotas.maxVms)} />
+                      {(() => {
+                        const used = ratio(tenant.usage.usedVms, tenant.quotas.maxVms);
+                        const tone = quotaTone(used);
+                        return (
+                          <>
+                            <div className="mb-1 flex justify-between text-xs text-[--ink-2]">
+                              <span>VMs</span>
+                              <span>
+                                {tenant.usage.usedVms}/{tenant.quotas.maxVms}
+                                <span className={`ml-2 font-semibold ${toneClassName[tone]}`}>
+                                  {used}% {quotaToneLabel(used)}
+                                </span>
+                              </span>
+                            </div>
+                            <Progress value={used} tone={tone} />
+                          </>
+                        );
+                      })()}
                     </div>
                     <div>
-                      <div className="mb-1 flex justify-between text-xs text-[--ink-2]">
-                        <span>vCPU</span>
-                        <span>
-                          {tenant.usage.usedVcpus}/{tenant.quotas.maxVcpus}
-                        </span>
-                      </div>
-                      <Progress value={ratio(tenant.usage.usedVcpus, tenant.quotas.maxVcpus)} />
+                      {(() => {
+                        const used = ratio(tenant.usage.usedVcpus, tenant.quotas.maxVcpus);
+                        const tone = quotaTone(used);
+                        return (
+                          <>
+                            <div className="mb-1 flex justify-between text-xs text-[--ink-2]">
+                              <span>vCPU</span>
+                              <span>
+                                {tenant.usage.usedVcpus}/{tenant.quotas.maxVcpus}
+                                <span className={`ml-2 font-semibold ${toneClassName[tone]}`}>
+                                  {used}% {quotaToneLabel(used)}
+                                </span>
+                              </span>
+                            </div>
+                            <Progress value={used} tone={tone} />
+                          </>
+                        );
+                      })()}
                     </div>
                     <div>
-                      <div className="mb-1 flex justify-between text-xs text-[--ink-2]">
-                        <span>RAM MB</span>
-                        <span>
-                          {tenant.usage.usedRamMb}/{tenant.quotas.maxRamMb}
-                        </span>
-                      </div>
-                      <Progress value={ratio(tenant.usage.usedRamMb, tenant.quotas.maxRamMb)} />
+                      {(() => {
+                        const used = ratio(tenant.usage.usedRamMb, tenant.quotas.maxRamMb);
+                        const tone = quotaTone(used);
+                        return (
+                          <>
+                            <div className="mb-1 flex justify-between text-xs text-[--ink-2]">
+                              <span>RAM MB</span>
+                              <span>
+                                {tenant.usage.usedRamMb}/{tenant.quotas.maxRamMb}
+                                <span className={`ml-2 font-semibold ${toneClassName[tone]}`}>
+                                  {used}% {quotaToneLabel(used)}
+                                </span>
+                              </span>
+                            </div>
+                            <Progress value={used} tone={tone} />
+                          </>
+                        );
+                      })()}
                     </div>
                     <div>
-                      <div className="mb-1 flex justify-between text-xs text-[--ink-2]">
-                        <span>Disk GB</span>
-                        <span>
-                          {tenant.usage.usedDiskGb}/{tenant.quotas.maxDiskGb}
-                        </span>
-                      </div>
-                      <Progress value={ratio(tenant.usage.usedDiskGb, tenant.quotas.maxDiskGb)} />
+                      {(() => {
+                        const used = ratio(tenant.usage.usedDiskGb, tenant.quotas.maxDiskGb);
+                        const tone = quotaTone(used);
+                        return (
+                          <>
+                            <div className="mb-1 flex justify-between text-xs text-[--ink-2]">
+                              <span>Disk GB</span>
+                              <span>
+                                {tenant.usage.usedDiskGb}/{tenant.quotas.maxDiskGb}
+                                <span className={`ml-2 font-semibold ${toneClassName[tone]}`}>
+                                  {used}% {quotaToneLabel(used)}
+                                </span>
+                              </span>
+                            </div>
+                            <Progress value={used} tone={tone} />
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

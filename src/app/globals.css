@@ -13,6 +13,10 @@
   --surface-3: #e6eaf0;
   --line: #d8dfe8;
   --line-strong: #c6ced9;
+  --state-safe: #16a34a;
+  --state-watch: #ca8a04;
+  --state-warning: #ea580c;
+  --state-critical: #dc2626;
 }
 
 @theme inline {

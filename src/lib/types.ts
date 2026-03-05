@@ -86,6 +86,15 @@ export type UserDto = {
 export type SecurityAlertStatus = "OPEN" | "ACKNOWLEDGED" | "RESOLVED";
 export type SecurityAlertSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type SecurityAlertType = "AUTH_ANOMALY" | "INSTANCE_FAILURE" | "QUOTA_PRESSURE" | "SG_EXPOSURE";
+export type SecurityPlaybook =
+  | "STOP_INSTANCE"
+  | "QUARANTINE_INSTANCE"
+  | "RESTORE_INSTANCE_SG"
+  | "SUGGEST_PASSWORD_RESET"
+  | "SUGGEST_ACCESS_LOCKDOWN"
+  | "SUGGEST_SG_HARDENING"
+  | "SUGGEST_CAPACITY_RIGHTSIZING"
+  | "SUGGEST_INSTANCE_DIAGNOSTICS";
 
 export type SecurityAlertDto = {
   id: string;
@@ -109,6 +118,7 @@ export type SecurityAlertDto = {
   resolvedBy: string | null;
   createdAt: string;
   updatedAt: string;
+  recommendedPlaybooks: SecurityPlaybook[];
 };
 
 export type InstanceRiskMetricDto = {
@@ -138,10 +148,15 @@ export type SecurityOverviewDto = {
   alerts: SecurityAlertDto[];
   lastEvaluatedAt: string | null;
   lastEvaluationError: string | null;
+  demo: {
+    isFrozen: boolean;
+    frozenAt: string | null;
+    mode: "FIRST_DETECTION_FREEZE";
+  };
 };
 
 export type PlaybookRequestDto = {
-  playbook: "STOP_INSTANCE" | "QUARANTINE_INSTANCE" | "RESTORE_INSTANCE_SG" | "SUGGEST_PASSWORD_RESET";
+  playbook: SecurityPlaybook;
 };
 
 export type AlertStatusPatchDto = {

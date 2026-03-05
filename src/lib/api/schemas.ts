@@ -114,6 +114,10 @@ export const securityPlaybookSchema = z.enum([
   "QUARANTINE_INSTANCE",
   "RESTORE_INSTANCE_SG",
   "SUGGEST_PASSWORD_RESET",
+  "SUGGEST_ACCESS_LOCKDOWN",
+  "SUGGEST_SG_HARDENING",
+  "SUGGEST_CAPACITY_RIGHTSIZING",
+  "SUGGEST_INSTANCE_DIAGNOSTICS",
 ]);
 
 export const executeSecurityPlaybookSchema = z.object({

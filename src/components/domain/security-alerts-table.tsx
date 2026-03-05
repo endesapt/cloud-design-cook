@@ -1,22 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { SecuritySeverityBadge } from "@/components/domain/security-severity-badge";
 import { SecurityStatusBadge } from "@/components/domain/security-status-badge";
-import type { SecurityAlertDto } from "@/lib/types";
+import type { SecurityAlertDto, SecurityPlaybook } from "@/lib/types";
 
 type AlertStatus = "OPEN" | "ACKNOWLEDGED" | "RESOLVED";
-type Playbook = "STOP_INSTANCE" | "QUARANTINE_INSTANCE" | "RESTORE_INSTANCE_SG" | "SUGGEST_PASSWORD_RESET";
+type Playbook = SecurityPlaybook;
 
-const INSTANCE_PLAYBOOKS: Playbook[] = ["STOP_INSTANCE", "QUARANTINE_INSTANCE", "RESTORE_INSTANCE_SG", "SUGGEST_PASSWORD_RESET"];
-const GENERIC_PLAYBOOKS: Playbook[] = ["SUGGEST_PASSWORD_RESET"];
+const FALLBACK_INSTANCE_PLAYBOOKS: Playbook[] = ["QUARANTINE_INSTANCE", "STOP_INSTANCE", "SUGGEST_INSTANCE_DIAGNOSTICS"];
+const FALLBACK_GENERIC_PLAYBOOKS: Playbook[] = ["SUGGEST_INSTANCE_DIAGNOSTICS"];
 
 function playbookLabel(playbook: Playbook) {
   if (playbook === "STOP_INSTANCE") return "Stop Instance";
-  if (playbook === "QUARANTINE_INSTANCE") return "Quarantine";
+  if (playbook === "QUARANTINE_INSTANCE") return "Quarantine Instance";
   if (playbook === "RESTORE_INSTANCE_SG") return "Restore SG";
-  return "Suggest Password Reset";
+  if (playbook === "SUGGEST_PASSWORD_RESET") return "Password Reset Plan";
+  if (playbook === "SUGGEST_ACCESS_LOCKDOWN") return "Access Lockdown Plan";
+  if (playbook === "SUGGEST_SG_HARDENING") return "SG Hardening Plan";
+  if (playbook === "SUGGEST_CAPACITY_RIGHTSIZING") return "Capacity Rightsizing Plan";
+  return "Instance Diagnostics Plan";
 }
 
 export function SecurityAlertsTable({
@@ -32,8 +36,6 @@ export function SecurityAlertsTable({
   onStatusChange: (alertId: string, status: AlertStatus) => Promise<void>;
   onPlaybook: (alertId: string, playbook: Playbook) => Promise<void>;
 }) {
-  const [playbookByAlert, setPlaybookByAlert] = useState<Record<string, Playbook>>({});
-
   const rows = useMemo(() => alerts.slice(0, 100), [alerts]);
 
   return (
@@ -51,8 +53,12 @@ export function SecurityAlertsTable({
         </thead>
         <tbody>
           {rows.map((alert) => {
-            const availablePlaybooks = alert.targetType === "instance" ? INSTANCE_PLAYBOOKS : GENERIC_PLAYBOOKS;
-            const selectedPlaybook = playbookByAlert[alert.id] ?? availablePlaybooks[0];
+            const availablePlaybooks =
+              alert.recommendedPlaybooks?.length
+                ? alert.recommendedPlaybooks
+                : alert.targetType === "instance"
+                  ? FALLBACK_INSTANCE_PLAYBOOKS
+                  : FALLBACK_GENERIC_PLAYBOOKS;
             const locked = busyKey === alert.id;
 
             return (
@@ -77,7 +83,7 @@ export function SecurityAlertsTable({
                   {!canMutate ? (
                     <p className="text-xs font-medium text-[--ink-3]">Read-only</p>
                   ) : (
-                    <div className="flex min-w-[21rem] flex-wrap items-center gap-2">
+                    <div className="flex min-w-[24rem] flex-wrap items-center gap-2">
                       <Button
                         size="sm"
                         variant="secondary"
@@ -102,25 +108,17 @@ export function SecurityAlertsTable({
                       >
                         Reopen
                       </Button>
-                      <select
-                        className="h-9 rounded-lg border border-[--line] bg-white px-2 text-xs text-[--ink-1]"
-                        value={selectedPlaybook}
-                        onChange={(event) =>
-                          setPlaybookByAlert((prev) => ({
-                            ...prev,
-                            [alert.id]: event.target.value as Playbook,
-                          }))
-                        }
-                      >
-                        {availablePlaybooks.map((playbook) => (
-                          <option key={playbook} value={playbook}>
-                            {playbookLabel(playbook)}
-                          </option>
-                        ))}
-                      </select>
-                      <Button size="sm" disabled={locked} onClick={() => void onPlaybook(alert.id, selectedPlaybook)}>
-                        Run
-                      </Button>
+                      {availablePlaybooks.map((playbook, index) => (
+                        <Button
+                          key={`${alert.id}-${playbook}`}
+                          size="sm"
+                          variant={index === 0 ? "default" : "secondary"}
+                          disabled={locked}
+                          onClick={() => void onPlaybook(alert.id, playbook)}
+                        >
+                          {playbookLabel(playbook)}
+                        </Button>
+                      ))}
                     </div>
                   )}
                 </td>

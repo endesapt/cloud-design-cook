@@ -7,6 +7,7 @@ import { updateSecurityAlertStatusSchema } from "@/lib/api/schemas";
 import { requireTenantWrite } from "@/lib/auth/guards";
 import { writeOperationLog } from "@/lib/audit";
 import { NotFoundError } from "@/lib/errors/app-error";
+import { recommendedPlaybooksForAlert } from "@/lib/security/recommendations";
 import { assertTenantIsAccessible, assertTenantOwnership } from "@/lib/tenant/scope";
 
 type Params = {
@@ -115,6 +116,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       resolvedBy: updated.resolvedBy?.email ?? null,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
+      recommendedPlaybooks: recommendedPlaybooksForAlert(updated.type, updated.targetType),
     });
   } catch (error) {
     return apiError(error);

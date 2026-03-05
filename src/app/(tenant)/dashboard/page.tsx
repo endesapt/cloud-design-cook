@@ -65,24 +65,28 @@ export default function DashboardPage() {
     if (!quota) return [];
     return [
       {
+        mode: "quota" as const,
         title: "Instances",
         description: "Allocated VM slots",
         current: quota.usage.usedVms,
         limit: quota.limits.maxVms,
       },
       {
+        mode: "quota" as const,
         title: "vCPU",
         description: "Compute quota usage",
         current: quota.usage.usedVcpus,
         limit: quota.limits.maxVcpus,
       },
       {
+        mode: "quota" as const,
         title: "RAM (MB)",
         description: "Memory pool",
         current: quota.usage.usedRamMb,
         limit: quota.limits.maxRamMb,
       },
       {
+        mode: "quota" as const,
         title: "Disk (GB)",
         description: "Persistent disk usage",
         current: quota.usage.usedDiskGb,

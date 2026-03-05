@@ -8,11 +8,12 @@ import { LogoutButton } from "@/components/domain/logout-button";
 import { MetricCard } from "@/components/domain/metric-card";
 import { SecurityAlertsTable } from "@/components/domain/security-alerts-table";
 import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiFetch } from "@/lib/client/api";
-import type { AuthMe, SecurityAlertDto, SecurityOverviewDto } from "@/lib/types";
+import type { AuthMe, SecurityAlertDto, SecurityOverviewDto, SecurityPlaybook } from "@/lib/types";
 
-type Playbook = "STOP_INSTANCE" | "QUARANTINE_INSTANCE" | "RESTORE_INSTANCE_SG" | "SUGGEST_PASSWORD_RESET";
+type Playbook = SecurityPlaybook;
 type AlertStatus = "OPEN" | "ACKNOWLEDGED" | "RESOLVED";
 
 export default function TenantSecurityCenterPage() {
@@ -44,10 +45,6 @@ export default function TenantSecurityCenterPage() {
 
   useEffect(() => {
     void load();
-    const timer = setInterval(() => {
-      void load(false);
-    }, 10_000);
-    return () => clearInterval(timer);
   }, [load]);
 
   const topMetricRows = useMemo(() => {
@@ -124,7 +121,14 @@ export default function TenantSecurityCenterPage() {
       <PageHeader
         title="AI Security Center"
         description="Risk analytics, detections, and one-click remediation"
-        right={<LogoutButton />}
+        right={
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => void load()}>
+              Refresh Snapshot
+            </Button>
+            <LogoutButton />
+          </div>
+        }
       />
 
       {loading ? (
@@ -136,18 +140,19 @@ export default function TenantSecurityCenterPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           <MetricCard
+            mode="counter"
             title="Open Alerts"
             description="Current active security signals"
-            current={overview?.summary.openAlerts ?? 0}
-            limit={Math.max((overview?.summary.openAlerts ?? 0) + (overview?.summary.acknowledgedAlerts ?? 0), 1)}
+            value={overview?.summary.openAlerts ?? 0}
           />
           <MetricCard
+            mode="counter"
             title="Critical"
             description="High-impact unresolved alerts"
-            current={overview?.summary.criticalOpenAlerts ?? 0}
-            limit={Math.max((overview?.summary.openAlerts ?? 0) + (overview?.summary.acknowledgedAlerts ?? 0), 1)}
+            value={overview?.summary.criticalOpenAlerts ?? 0}
           />
           <MetricCard
+            mode="quota"
             title="Quota Pressure"
             description="Maximum tenant utilization"
             current={overview?.summary.quotaPressurePct ?? 0}
@@ -155,6 +160,13 @@ export default function TenantSecurityCenterPage() {
           />
         </div>
       )}
+
+      {overview?.demo?.isFrozen ? (
+        <p className="mt-3 rounded-xl border border-[#fbcfe8] bg-[#fff1f2] px-3 py-2 text-xs font-semibold text-[#9f1239]">
+          Demo snapshot frozen since {overview.demo.frozenAt ? new Date(overview.demo.frozenAt).toLocaleString() : "n/a"}.
+          Auto-updates are disabled.
+        </p>
+      ) : null}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-3">
         <AiInsightCard {...primaryInsight} />

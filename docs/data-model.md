@@ -42,6 +42,14 @@
 - `status` (`OPEN|ACKNOWLEDGED|RESOLVED`);
 - `fingerprint` for dedupe and safe auto-resolve.
 
+`tenant_security_state` stores:
+- refresh checkpoints (`lastEvaluatedAt`, `lastCleanupAt`, `lastEvaluationError`);
+- demo freeze marker `demoFrozenAt` for one-shot snapshot mode.
+
+`security_alert_remediations` stores:
+- playbook execution history including suggestion-only playbooks
+  (`SUGGEST_ACCESS_LOCKDOWN`, `SUGGEST_SG_HARDENING`, `SUGGEST_CAPACITY_RIGHTSIZING`, `SUGGEST_INSTANCE_DIAGNOSTICS`).
+
 `operations_log` stores:
 - structured `outcome`, `riskLevel`, `resourceType`, `resourceId`;
 - masked source context (`sourceIpMasked`, `userAgent`).

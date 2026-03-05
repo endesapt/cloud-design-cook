@@ -2,11 +2,22 @@ import { Prisma, SecurityAlertSeverity, SecurityAlertStatus, SecurityAlertType }
 import { prisma } from "@/lib/db/prisma";
 import { evaluateSecurityAlerts, buildAlertFingerprint, type SecurityAlertCandidate } from "@/lib/security/alerts-engine";
 import { getLatestTenantMetrics, refreshInstanceRiskMetrics } from "@/lib/security/metrics";
+import { recommendedPlaybooksForAlert } from "@/lib/security/recommendations";
+import { config } from "@/lib/config";
 
 const REFRESH_TTL_MS = 30_000;
 const METRICS_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const ALERT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const CLEANUP_TTL_MS = 6 * 60 * 60 * 1000;
+const DEMO_FREEZE_MODE = "FIRST_DETECTION_FREEZE" as const;
+
+export function shouldFreezeTenantAfterEvaluation(
+  demoFreezeEnabled: boolean,
+  demoFrozenAt: Date | null | undefined,
+  candidatesCount: number,
+) {
+  return Boolean(demoFreezeEnabled && !demoFrozenAt && candidatesCount > 0);
+}
 
 export function nextAlertStatusForSync(status: SecurityAlertStatus, candidatePresent: boolean) {
   if (candidatePresent) {
@@ -184,11 +195,23 @@ export async function refreshTenantSecuritySignals(tenantId: string, options?: {
   const now = new Date();
   const force = options?.force ?? false;
   const state = await ensureTenantState(tenantId);
+  const demoFrozen = Boolean(config.securityDemoFreeze && state.demoFrozenAt);
+
+  if (!force && demoFrozen) {
+    return {
+      refreshed: false,
+      lastEvaluatedAt: state.lastEvaluatedAt,
+      frozen: true,
+      frozenAt: state.demoFrozenAt,
+    };
+  }
 
   if (!force && state.lastEvaluatedAt && now.getTime() - state.lastEvaluatedAt.getTime() < REFRESH_TTL_MS) {
     return {
       refreshed: false,
       lastEvaluatedAt: state.lastEvaluatedAt,
+      frozen: demoFrozen,
+      frozenAt: state.demoFrozenAt,
     };
   }
 
@@ -201,6 +224,7 @@ export async function refreshTenantSecuritySignals(tenantId: string, options?: {
     });
 
     await syncTenantAlerts(tenantId, candidates, now);
+    const shouldFreezeNow = shouldFreezeTenantAfterEvaluation(config.securityDemoFreeze, state.demoFrozenAt, candidates.length);
 
     if (!state.lastCleanupAt || now.getTime() - state.lastCleanupAt.getTime() >= CLEANUP_TTL_MS) {
       await cleanupTenantSecurityData(tenantId, now);
@@ -212,12 +236,15 @@ export async function refreshTenantSecuritySignals(tenantId: string, options?: {
         lastEvaluatedAt: now,
         lastCleanupAt: !state.lastCleanupAt || now.getTime() - state.lastCleanupAt.getTime() >= CLEANUP_TTL_MS ? now : state.lastCleanupAt,
         lastEvaluationError: null,
+        demoFrozenAt: shouldFreezeNow ? now : state.demoFrozenAt,
       },
     });
 
     return {
       refreshed: true,
       lastEvaluatedAt: now,
+      frozen: demoFrozen || shouldFreezeNow,
+      frozenAt: shouldFreezeNow ? now : state.demoFrozenAt,
     };
   } catch (error) {
     await prisma.tenantSecurityState.update({
@@ -240,6 +267,7 @@ export async function getTenantSecurityOverview(tenantId: string) {
       select: {
         lastEvaluatedAt: true,
         lastEvaluationError: true,
+        demoFrozenAt: true,
       },
     }),
     prisma.securityAlert.count({
@@ -316,6 +344,7 @@ export async function getTenantSecurityOverview(tenantId: string) {
       resolvedBy: alert.resolvedBy?.email ?? null,
       createdAt: alert.createdAt,
       updatedAt: alert.updatedAt,
+      recommendedPlaybooks: recommendedPlaybooksForAlert(alert.type, alert.targetType),
     }));
 
   const riskyInstances = latestMetrics.filter((metric) => metric.riskScore >= 70).length;
@@ -346,6 +375,11 @@ export async function getTenantSecurityOverview(tenantId: string) {
     alerts: sortedAlerts,
     lastEvaluatedAt: state?.lastEvaluatedAt ?? null,
     lastEvaluationError: state?.lastEvaluationError ?? null,
+    demo: {
+      isFrozen: Boolean(config.securityDemoFreeze && state?.demoFrozenAt),
+      frozenAt: state?.demoFrozenAt ?? null,
+      mode: DEMO_FREEZE_MODE,
+    },
   };
 }
 
@@ -395,6 +429,7 @@ export async function listTenantSecurityAlerts(params: {
     resolvedBy: alert.resolvedBy?.email ?? null,
     createdAt: alert.createdAt,
     updatedAt: alert.updatedAt,
+    recommendedPlaybooks: recommendedPlaybooksForAlert(alert.type, alert.targetType),
   }));
 }
 
@@ -406,6 +441,7 @@ export async function refreshDueTenantSecuritySignals(limit = 8) {
       securityState: {
         select: {
           lastEvaluatedAt: true,
+          demoFrozenAt: true,
         },
       },
     },
@@ -418,6 +454,7 @@ export async function refreshDueTenantSecuritySignals(limit = 8) {
   const now = Date.now();
   const dueTenantIds = tenants
     .filter((tenant) => {
+      if (config.securityDemoFreeze && tenant.securityState?.demoFrozenAt) return false;
       if (!tenant.securityState?.lastEvaluatedAt) return true;
       return now - tenant.securityState.lastEvaluatedAt.getTime() >= REFRESH_TTL_MS;
     })
@@ -428,6 +465,40 @@ export async function refreshDueTenantSecuritySignals(limit = 8) {
   }
 
   return dueTenantIds.length;
+}
+
+export async function resetTenantSecurityDemoFreeze(tenantId: string) {
+  const now = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.securityAlertRemediation.deleteMany({
+      where: { tenantId },
+    });
+    await tx.securityAlert.deleteMany({
+      where: { tenantId },
+    });
+    await tx.instanceMetricSnapshot.deleteMany({
+      where: { tenantId },
+    });
+    await tx.tenantSecurityState.upsert({
+      where: { tenantId },
+      create: {
+        tenantId,
+        lastCleanupAt: now,
+        demoFrozenAt: null,
+      },
+      update: {
+        lastEvaluatedAt: null,
+        lastCleanupAt: now,
+        lastEvaluationError: null,
+        demoFrozenAt: null,
+      },
+    });
+  });
+
+  await refreshTenantSecuritySignals(tenantId, { force: true });
+
+  return getTenantSecurityOverview(tenantId);
 }
 
 export async function getGlobalSecurityOverview() {
@@ -562,5 +633,6 @@ export async function listAdminSecurityAlerts(params: {
     resolvedBy: alert.resolvedBy?.email ?? null,
     createdAt: alert.createdAt,
     updatedAt: alert.updatedAt,
+    recommendedPlaybooks: recommendedPlaybooksForAlert(alert.type, alert.targetType),
   }));
 }

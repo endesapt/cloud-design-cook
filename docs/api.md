@@ -39,7 +39,7 @@ Roles:
 - `GET /api/v1/security/overview`
 - `GET /api/v1/security/alerts?status=OPEN&severity=HIGH`
 - `PATCH /api/v1/security/alerts/:id` body `{ status: OPEN|ACKNOWLEDGED|RESOLVED }`
-- `POST /api/v1/security/alerts/:id/playbook` body `{ playbook: STOP_INSTANCE|QUARANTINE_INSTANCE|RESTORE_INSTANCE_SG|SUGGEST_PASSWORD_RESET }`
+- `POST /api/v1/security/alerts/:id/playbook` body `{ playbook: STOP_INSTANCE|QUARANTINE_INSTANCE|RESTORE_INSTANCE_SG|SUGGEST_PASSWORD_RESET|SUGGEST_ACCESS_LOCKDOWN|SUGGEST_SG_HARDENING|SUGGEST_CAPACITY_RIGHTSIZING|SUGGEST_INSTANCE_DIAGNOSTICS }`
 - `GET /api/v1/users`
 - `POST /api/v1/users` body `{ email, fullName, role, password, tenantId? }`
 - `GET /api/v1/users/:id`
@@ -59,6 +59,7 @@ Instance behavior notes:
 - `GET /api/v1/admin/security/overview`
 - `GET /api/v1/admin/security/overview?tenantId=:id`
 - `GET /api/v1/admin/security/alerts?tenantId=:id`
+- `POST /api/v1/admin/security/tenants/:tenantId/reset-freeze`
 - `GET /api/v1/admin/tenants`
 - `POST /api/v1/admin/tenants`
 - `GET /api/v1/admin/tenants/:id`
@@ -101,8 +102,13 @@ All non-2xx responses use:
 
 Security notes:
 - signal engine refresh is on-read with tenant TTL;
+- when `SECURITY_DEMO_FREEZE=true`, tenant signals freeze after first detection until admin reset;
 - alert lifecycle is `OPEN -> ACKNOWLEDGED -> RESOLVED` (manual or auto-resolve);
 - support viewer is read-only and cannot execute playbooks.
+
+Security overview contract note:
+- tenant-scoped overview payload includes
+  `demo: { isFrozen: boolean, frozenAt: string | null, mode: "FIRST_DETECTION_FREEZE" }`.
 
 Tenant session note:
 - If the DB was reset/reseeded and the cookie points to a removed tenant, tenant APIs (including `/api/v1/quota`, `/api/v1/logs`, and `/api/v1/activity`) return `UNAUTHORIZED` and the session cookie is cleared.

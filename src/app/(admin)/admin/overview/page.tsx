@@ -82,23 +82,23 @@ export default function AdminOverviewPage() {
         <>
           <div className="grid gap-4 md:grid-cols-4">
             <MetricCard
+              mode="counter"
               title="Tenants"
               description="Registered organizations"
-              current={data?.tenantsCount ?? 0}
-              limit={data?.tenantsCount ?? 1}
+              value={data?.tenantsCount ?? 0}
             />
-            <MetricCard title="Instances" description="Total instances" current={totalInstances} limit={Math.max(totalInstances, 1)} />
+            <MetricCard mode="counter" title="Instances" description="Total instances" value={totalInstances} />
             <MetricCard
+              mode="counter"
               title="Running"
               description="Currently active instances"
-              current={data?.statusSummary.RUNNING ?? 0}
-              limit={Math.max(totalInstances, 1)}
+              value={data?.statusSummary.RUNNING ?? 0}
             />
             <MetricCard
+              mode="counter"
               title="Sec Alerts"
               description="Open + acknowledged security alerts"
-              current={data?.securitySummary.activeAlerts ?? 0}
-              limit={Math.max((data?.securitySummary.activeAlerts ?? 0) + 1, 1)}
+              value={data?.securitySummary.activeAlerts ?? 0}
             />
           </div>
 

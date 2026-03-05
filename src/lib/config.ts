@@ -17,6 +17,7 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET ?? "dev-secret-not-for-production",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
   mockFailRate: asNumber(process.env.MOCK_FAIL_RATE, 0.05),
+  securityDemoFreeze: asBoolean(process.env.SECURITY_DEMO_FREEZE, true),
   provisionMode: provisionMode(),
   dockerImage: process.env.DOCKER_VM_IMAGE ?? "alpine:3.20",
   dockerMinCpus: asNumber(process.env.DOCKER_MIN_CPUS, 0.1),

@@ -8,11 +8,12 @@ import { LogoutButton } from "@/components/domain/logout-button";
 import { MetricCard } from "@/components/domain/metric-card";
 import { SecurityAlertsTable } from "@/components/domain/security-alerts-table";
 import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiFetch } from "@/lib/client/api";
-import type { AuthMe, SecurityAlertDto, SecurityOverviewDto, TenantSummaryDto } from "@/lib/types";
+import type { AuthMe, SecurityAlertDto, SecurityOverviewDto, SecurityPlaybook, TenantSummaryDto } from "@/lib/types";
 
-type Playbook = "STOP_INSTANCE" | "QUARANTINE_INSTANCE" | "RESTORE_INSTANCE_SG" | "SUGGEST_PASSWORD_RESET";
+type Playbook = SecurityPlaybook;
 type AlertStatus = "OPEN" | "ACKNOWLEDGED" | "RESOLVED";
 
 type GlobalOverview = {
@@ -78,10 +79,6 @@ export default function AdminSecurityCenterPage() {
 
   useEffect(() => {
     void load();
-    const timer = setInterval(() => {
-      void load(false);
-    }, 12_000);
-    return () => clearInterval(timer);
   }, [load]);
 
   const topTenantName = useMemo(() => {
@@ -121,12 +118,35 @@ export default function AdminSecurityCenterPage() {
     }
   }
 
+  async function resetTenantFreeze() {
+    if (!selectedTenantId) return;
+    try {
+      setLoading(true);
+      await apiFetch(`/api/v1/admin/security/tenants/${selectedTenantId}/reset-freeze`, {
+        method: "POST",
+      });
+      toast.success("Security snapshot reset and rebuilt");
+      await load(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to reset security snapshot");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div>
       <PageHeader
         title="Admin AI Security Center"
         description="Cross-tenant security posture, alert triage, and guided remediation"
-        right={<LogoutButton />}
+        right={
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => void load()}>
+              Refresh Snapshot
+            </Button>
+            <LogoutButton />
+          </div>
+        }
       />
 
       {loading ? (
@@ -138,22 +158,22 @@ export default function AdminSecurityCenterPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           <MetricCard
+            mode="counter"
             title="Active Alerts"
             description="Open + acknowledged across tenants"
-            current={globalOverview?.activeAlerts ?? 0}
-            limit={Math.max(globalOverview?.activeAlerts ?? 1, 1)}
+            value={globalOverview?.activeAlerts ?? 0}
           />
           <MetricCard
+            mode="counter"
             title="Critical"
             description="Global high-risk alert count"
-            current={globalOverview?.severitySummary?.CRITICAL ?? 0}
-            limit={Math.max(globalOverview?.activeAlerts ?? 1, 1)}
+            value={globalOverview?.severitySummary?.CRITICAL ?? 0}
           />
           <MetricCard
+            mode="counter"
             title="Tenants"
             description="Organizations with monitored telemetry"
-            current={globalOverview?.tenantsCount ?? 0}
-            limit={Math.max(globalOverview?.tenantsCount ?? 1, 1)}
+            value={globalOverview?.tenantsCount ?? 0}
           />
         </div>
       )}
@@ -191,10 +211,22 @@ export default function AdminSecurityCenterPage() {
                 ))}
               </select>
               <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[--ink-3]">Current: {topTenantName}</span>
+              {canMutate && selectedTenantId ? (
+                <Button size="sm" variant="secondary" onClick={() => void resetTenantFreeze()}>
+                  Reset Demo Freeze
+                </Button>
+              ) : null}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {overview?.demo?.isFrozen ? (
+        <p className="mt-3 rounded-xl border border-[#fbcfe8] bg-[#fff1f2] px-3 py-2 text-xs font-semibold text-[#9f1239]">
+          Demo snapshot frozen since {overview.demo.frozenAt ? new Date(overview.demo.frozenAt).toLocaleString() : "n/a"}.
+          Use reset to rebuild signals.
+        </p>
+      ) : null}
 
       <Card className="mt-6">
         <CardHeader>

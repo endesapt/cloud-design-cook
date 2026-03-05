@@ -59,6 +59,7 @@ enum OperationAction {
   FORCE_DELETE_TENANT
   SECURITY_ALERT_STATUS_UPDATE
   SECURITY_PLAYBOOK_EXECUTION
+  RESET_SECURITY_DEMO_FREEZE
 }
 
 enum OperationOutcome {
@@ -99,6 +100,10 @@ enum SecurityPlaybook {
   QUARANTINE_INSTANCE
   RESTORE_INSTANCE_SG
   SUGGEST_PASSWORD_RESET
+  SUGGEST_ACCESS_LOCKDOWN
+  SUGGEST_SG_HARDENING
+  SUGGEST_CAPACITY_RIGHTSIZING
+  SUGGEST_INSTANCE_DIAGNOSTICS
 }
 
 enum RemediationStatus {
@@ -356,6 +361,7 @@ model TenantSecurityState {
   lastEvaluatedAt    DateTime?
   lastCleanupAt      DateTime?
   lastEvaluationError String?
+  demoFrozenAt       DateTime?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)

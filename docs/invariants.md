@@ -16,6 +16,7 @@
 9. Docker mode must apply minimal runtime limits to each containerized VM.
 10. `support_viewer` and `tenant_user` cannot mutate security alerts or execute playbooks.
 11. Security alerts and metric snapshots are tenant-scoped and cannot be read cross-tenant.
+12. Demo freeze reset endpoint is `global_admin` only.
 
 ## Architecture Invariants
 1. Route handlers coordinate transport and delegate domain logic.
@@ -23,6 +24,7 @@
 3. Prisma is the only DB access layer.
 4. UI must consume contracts; no hidden business logic in presentation components.
 5. Security detection/playbook logic stays inside `src/lib/security/*`.
+6. Demo freeze state is controlled through `tenant_security_state` and never bypasses tenant ownership checks.
 
 ## Demo Reliability Invariants
 1. Mock provisioning delay remains in range 5–15 seconds.
@@ -30,3 +32,4 @@
 3. Mock fail rate stays low and configurable via env.
 4. Docker container resources remain capped (`DOCKER_MIN_CPUS`, `DOCKER_MIN_MEMORY_MB`, `DOCKER_PIDS_LIMIT`).
 5. Security signal refresh is on-read with bounded TTL per tenant.
+6. In demo mode, tenants freeze after first detection until explicit admin reset.

@@ -14,6 +14,8 @@ function playbookRisk(playbook: SecurityPlaybook) {
   if (playbook === SecurityPlaybook.STOP_INSTANCE) return "MEDIUM" as const;
   if (playbook === SecurityPlaybook.QUARANTINE_INSTANCE) return "HIGH" as const;
   if (playbook === SecurityPlaybook.RESTORE_INSTANCE_SG) return "MEDIUM" as const;
+  if (playbook === SecurityPlaybook.SUGGEST_SG_HARDENING) return "MEDIUM" as const;
+  if (playbook === SecurityPlaybook.SUGGEST_ACCESS_LOCKDOWN) return "MEDIUM" as const;
   return "LOW" as const;
 }
 
@@ -213,6 +215,63 @@ async function executeSuggestPasswordReset(targetType: string, targetId: string)
     targetType,
     targetId,
     recommendation: "Trigger manual password reset flow for the affected identity.",
+    checklist: [
+      "Reset password for all potentially impacted users.",
+      "Invalidate active sessions for affected identities.",
+      "Monitor login failures for at least 15 minutes after reset.",
+    ],
+  };
+}
+
+async function executeSuggestAccessLockdown(targetType: string, targetId: string) {
+  return {
+    targetType,
+    targetId,
+    recommendation: "Apply temporary access lockdown and verify identity trust chain.",
+    checklist: [
+      "Temporarily block suspicious IP/user-agent patterns.",
+      "Invalidate active sessions on impacted accounts.",
+      "Require manual re-authentication for privileged users.",
+    ],
+  };
+}
+
+async function executeSuggestSecurityGroupHardening(targetType: string, targetId: string) {
+  return {
+    targetType,
+    targetId,
+    recommendation: "Review ingress exposure and reduce public attack surface.",
+    checklist: [
+      "Remove 0.0.0.0/0 ingress from sensitive ports first.",
+      "Restrict remaining ingress CIDRs to trusted ranges.",
+      "Validate security group attachments on production instances.",
+    ],
+  };
+}
+
+async function executeSuggestCapacityRightsizing(targetType: string, targetId: string) {
+  return {
+    targetType,
+    targetId,
+    recommendation: "Reduce quota pressure via cleanup and rightsizing before failures begin.",
+    checklist: [
+      "Stop or delete idle instances and unattached resources.",
+      "Resize over-provisioned instances where possible.",
+      "Request quota review if sustained utilization stays above 85%.",
+    ],
+  };
+}
+
+async function executeSuggestInstanceDiagnostics(targetType: string, targetId: string) {
+  return {
+    targetType,
+    targetId,
+    recommendation: "Run structured diagnostics on failing instance lifecycle.",
+    checklist: [
+      "Inspect recent operation log failures for the instance.",
+      "Validate network and security group bindings.",
+      "If instability persists, quarantine or stop the instance.",
+    ],
   };
 }
 
@@ -299,8 +358,16 @@ export async function executeSecurityPlaybookForAlert(args: {
         throw new AppError("RESTORE_INSTANCE_SG playbook supports instance alerts only", 409, "INVALID_TRANSITION");
       }
       snapshot = await executeRestoreInstanceSecurityGroups(alert.tenantId, alert.targetId);
-    } else {
+    } else if (args.playbook === SecurityPlaybook.SUGGEST_PASSWORD_RESET) {
       snapshot = await executeSuggestPasswordReset(alert.targetType, alert.targetId);
+    } else if (args.playbook === SecurityPlaybook.SUGGEST_ACCESS_LOCKDOWN) {
+      snapshot = await executeSuggestAccessLockdown(alert.targetType, alert.targetId);
+    } else if (args.playbook === SecurityPlaybook.SUGGEST_SG_HARDENING) {
+      snapshot = await executeSuggestSecurityGroupHardening(alert.targetType, alert.targetId);
+    } else if (args.playbook === SecurityPlaybook.SUGGEST_CAPACITY_RIGHTSIZING) {
+      snapshot = await executeSuggestCapacityRightsizing(alert.targetType, alert.targetId);
+    } else {
+      snapshot = await executeSuggestInstanceDiagnostics(alert.targetType, alert.targetId);
     }
 
     const [updatedRemediation, updatedAlert] = await prisma.$transaction([
