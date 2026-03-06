@@ -19,10 +19,17 @@ type MetricCardProps = {
 } & (CounterMetricCardProps | QuotaMetricCardProps);
 
 const toneTextClass: Record<ReturnType<typeof quotaTone>, string> = {
-  safe: "text-[--state-safe]",
-  watch: "text-[--state-watch]",
-  warning: "text-[--state-warning]",
-  critical: "text-[--state-critical]",
+  safe: "var(--state-safe)",
+  watch: "var(--state-watch)",
+  warning: "var(--state-warning)",
+  critical: "var(--state-critical)",
+};
+
+const toneDotClass: Record<ReturnType<typeof quotaTone>, string> = {
+  safe: "var(--state-safe)",
+  watch: "var(--state-watch)",
+  warning: "var(--state-warning)",
+  critical: "var(--state-critical)",
 };
 
 export function MetricCard(props: MetricCardProps) {
@@ -46,11 +53,22 @@ export function MetricCard(props: MetricCardProps) {
               {props.current.toLocaleString()}
               <span className="ml-2 text-sm font-medium text-[--ink-2]">/ {props.limit.toLocaleString()}</span>
             </div>
-            <p className="text-xs font-semibold text-[--ink-3]">
-              {Math.round(safeRatio)}% used
-              <span className={`ml-2 ${toneTextClass[tone]}`}>{quotaToneLabel(safeRatio)}</span>
-            </p>
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="font-semibold text-[--ink-3]">{Math.round(safeRatio)}% used</span>
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border border-[--line] bg-[--surface-2] px-2 py-0.5 font-semibold"
+                style={{ color: toneTextClass[tone] }}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: toneDotClass[tone] }} />
+                {quotaToneLabel(safeRatio)}
+              </span>
+            </div>
             <Progress value={safeRatio} tone={tone} />
+            <div className="flex items-center justify-between text-[10px] font-medium text-[--ink-3]">
+              <span>0%</span>
+              <span>Now {Math.round(safeRatio)}%</span>
+              <span>100%</span>
+            </div>
           </>
         )}
       </CardContent>

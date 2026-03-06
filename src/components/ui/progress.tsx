@@ -10,21 +10,23 @@ function toneForValue(value: number): ProgressTone {
 }
 
 const toneStyles: Record<ProgressTone, string> = {
-  safe: "bg-[--state-safe]",
-  watch: "bg-[--state-watch]",
-  warning: "bg-[--state-warning]",
-  critical: "bg-[--state-critical]",
+  safe: "var(--state-safe)",
+  watch: "var(--state-watch)",
+  warning: "var(--state-warning)",
+  critical: "var(--state-critical)",
 };
 
 export function Progress({ value, className, tone }: { value: number; className?: string; tone?: ProgressTone }) {
   const safe = Math.max(0, Math.min(100, value));
   const resolvedTone = tone ?? toneForValue(safe);
-  const markerLeftPct = Math.min(98, Math.max(2, safe));
+  const showMarker = safe > 0 && safe < 100;
+  const markerLeftPct = Math.min(99, Math.max(1, safe));
+  const fillWidthPct = safe > 0 ? Math.max(safe, 1.5) : 0;
 
   return (
     <div
       className={cn(
-        "relative h-3.5 w-full overflow-hidden rounded-full bg-[--surface-3] ring-1 ring-inset ring-[--line]",
+        "relative h-4 w-full overflow-hidden rounded-full bg-[--surface-3] ring-1 ring-inset ring-[--line]",
         className,
       )}
       role="progressbar"
@@ -41,17 +43,20 @@ export function Progress({ value, className, tone }: { value: number; className?
         />
       ))}
       <div
-        className={cn(
-          "h-full rounded-full shadow-[0_0_0_1px_rgba(17,24,39,0.08)] transition-all",
-          toneStyles[resolvedTone],
-        )}
-        style={{ width: `${safe}%` }}
+        className="h-full rounded-full transition-all"
+        style={{
+          width: `${fillWidthPct}%`,
+          backgroundColor: toneStyles[resolvedTone],
+          boxShadow: `inset 0 0 0 1px rgba(2,6,23,0.28), 0 0 14px color-mix(in srgb, ${toneStyles[resolvedTone]} 45%, transparent)`,
+        }}
       />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 w-[2px] bg-[--ink-1]/35"
-        style={{ left: `${markerLeftPct}%` }}
-      />
+      {showMarker ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 w-[2px] bg-[--ink-1]/35"
+          style={{ left: `${markerLeftPct}%` }}
+        />
+      ) : null}
     </div>
   );
 }

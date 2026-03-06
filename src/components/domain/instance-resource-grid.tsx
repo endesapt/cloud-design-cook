@@ -23,6 +23,13 @@ type InstanceResourceGridProps = {
   isMockTelemetry?: boolean;
 };
 
+const cpuToneChartColor = {
+  safe: { stroke: "#22c55e", fill: "#22c55e33" },
+  watch: { stroke: "#facc15", fill: "#facc1533" },
+  warning: { stroke: "#f59e0b", fill: "#f59e0b33" },
+  critical: { stroke: "#ef4444", fill: "#ef444433" },
+} as const;
+
 export function InstanceResourceGrid({
   title,
   description,
@@ -41,8 +48,11 @@ export function InstanceResourceGrid({
       </CardHeader>
       <CardContent>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((item) => (
-            <div key={item.id} className="rounded-xl border border-[--line] bg-[--surface-2] p-3">
+          {items.map((item) => {
+            const cpuMeta = quotaMeta(item.cpuPct);
+            const chartColors = cpuToneChartColor[cpuMeta.tone];
+            return (
+              <div key={item.id} className="rounded-xl border border-[--line] bg-[--surface-2] p-3">
               <div className="mb-2 flex items-start justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold text-[--ink-1]">{item.name}</p>
@@ -57,7 +67,13 @@ export function InstanceResourceGrid({
               <div className="h-12">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={item.cpuTrend.map((cpu, index) => ({ index, cpu }))}>
-                    <Area type="monotone" dataKey="cpu" stroke="#f59e0b" fill="#f59e0b33" strokeWidth={2} />
+                    <Area
+                      type="monotone"
+                      dataKey="cpu"
+                      stroke={chartColors.stroke}
+                      fill={chartColors.fill}
+                      strokeWidth={2}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -80,8 +96,9 @@ export function InstanceResourceGrid({
                   </div>
                 );
               })}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
 
         {isMockTelemetry ? (
