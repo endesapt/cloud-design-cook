@@ -7,11 +7,13 @@ import { InstanceStatus } from "@prisma/client";
 import { toast } from "sonner";
 import { SupportTenantTabs } from "@/components/domain/support-tenant-tabs";
 import { InstanceStatusBadge } from "@/components/domain/instance-status-badge";
+import { InstanceResourceGrid } from "@/components/domain/instance-resource-grid";
 import { LogoutButton } from "@/components/domain/logout-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/client/api";
+import { buildInstanceTelemetry } from "@/lib/ui/resource-telemetry";
 import type { AuthMe, InstanceDto } from "@/lib/types";
 
 const ACTIONS = [
@@ -91,6 +93,13 @@ export default function SupportTenantInstancesPage() {
     }
   }
 
+  const telemetryRows = instances.map((instance) => ({
+    id: instance.id,
+    name: instance.name,
+    status: instance.status,
+    ...buildInstanceTelemetry(instance.id, instance.status),
+  }));
+
   return (
     <div>
       <PageHeader
@@ -99,6 +108,17 @@ export default function SupportTenantInstancesPage() {
         right={<LogoutButton />}
       />
       <SupportTenantTabs tenantId={tenantId} />
+
+      {!loading && telemetryRows.length > 0 ? (
+        <div className="mb-6">
+          <InstanceResourceGrid
+            title="Support Resource Monitor"
+            description="Quick CPU/RAM/Disk visibility for triage and operator actions."
+            items={telemetryRows}
+            isMockTelemetry
+          />
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader className="pb-4">

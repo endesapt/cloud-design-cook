@@ -2,7 +2,7 @@
 
 - Status: active
 - Owner: design-engineering
-- Last Verified: 2026-03-04
+- Last Verified: 2026-03-06
 
 ## Visual Direction
 - Inspired by telecom cloud consoles: assertive red accents, neutral surfaces.
@@ -29,6 +29,12 @@
    - `70-84`: watch
    - `85-94`: warning
    - `>=95`: critical
+
+## Resource Visualization
+1. Show CPU/RAM/Disk charts only on operational pages where users take capacity or lifecycle actions (dashboards, instance management, support views).
+2. Always pair percentages with explicit context (`used/limit` or status label) to avoid abstract numbers.
+3. Trend history must be explicitly marked as demo mock when historical telemetry is unavailable from API.
+4. Color state must be duplicated by text labels (`Safe`, `Watch`, `Warning`, `Critical`) for clarity.
 
 ## UX Standards
 1. Show loading skeletons for data-heavy blocks.

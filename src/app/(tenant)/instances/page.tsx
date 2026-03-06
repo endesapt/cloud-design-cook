@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { InstanceStatus } from "@prisma/client";
 import { Play, Square, RotateCcw, Trash2, Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { InstanceStatusBadge } from "@/components/domain/instance-status-badge";
+import { InstanceResourceGrid } from "@/components/domain/instance-resource-grid";
 import { PageHeader } from "@/components/layout/page-header";
 import { LogoutButton } from "@/components/domain/logout-button";
 import { apiFetch } from "@/lib/client/api";
 import { deriveLogicalIpv4 } from "@/lib/network/logical-ip";
+import { buildInstanceTelemetry } from "@/lib/ui/resource-telemetry";
 import type { InstanceDto } from "@/lib/types";
 
 const ACTIONS = [
@@ -112,6 +114,17 @@ export default function InstancesPage() {
     }
   }
 
+  const telemetryRows = useMemo(
+    () =>
+      instances.map((instance) => ({
+        id: instance.id,
+        name: instance.name,
+        status: instance.status,
+        ...buildInstanceTelemetry(instance.id, instance.status),
+      })),
+    [instances],
+  );
+
   return (
     <div>
       <PageHeader
@@ -129,6 +142,17 @@ export default function InstancesPage() {
           </div>
         }
       />
+
+      {!loading && telemetryRows.length > 0 ? (
+        <div className="mb-6">
+          <InstanceResourceGrid
+            title="Instance Resource Monitor"
+            description="CPU/RAM/Disk context per VM for faster lifecycle decisions."
+            items={telemetryRows}
+            isMockTelemetry
+          />
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader className="pb-4">

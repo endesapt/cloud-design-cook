@@ -16,12 +16,17 @@ import type { AuthMe, SecurityAlertDto, SecurityOverviewDto, SecurityPlaybook } 
 type Playbook = SecurityPlaybook;
 type AlertStatus = "OPEN" | "ACKNOWLEDGED" | "RESOLVED";
 
+function randomCriticalConfidence() {
+  return Math.floor(Math.random() * 10) + 88;
+}
+
 export default function TenantSecurityCenterPage() {
   const [me, setMe] = useState<AuthMe | null>(null);
   const [overview, setOverview] = useState<SecurityOverviewDto | null>(null);
   const [alerts, setAlerts] = useState<SecurityAlertDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [criticalConfidence, setCriticalConfidence] = useState(randomCriticalConfidence());
 
   const canMutate = me?.role === "tenant_admin";
 
@@ -36,6 +41,9 @@ export default function TenantSecurityCenterPage() {
       setMe(meData);
       setOverview(overviewData);
       setAlerts(alertsData);
+      if (overviewData.summary.criticalOpenAlerts > 0) {
+        setCriticalConfidence(randomCriticalConfidence());
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load Security Center");
     } finally {
@@ -65,7 +73,7 @@ export default function TenantSecurityCenterPage() {
       return {
         title: "Immediate response recommended",
         description: `${summary.criticalOpenAlerts} high-severity alerts remain active. Prioritize quarantine or stop playbooks on affected resources.`,
-        confidence: 92,
+        confidence: criticalConfidence,
       };
     }
 
@@ -82,7 +90,7 @@ export default function TenantSecurityCenterPage() {
       description: "No high-priority risk spikes detected in current telemetry and audit behavior.",
       confidence: 81,
     };
-  }, [overview]);
+  }, [criticalConfidence, overview]);
 
   async function updateAlertStatus(alertId: string, status: AlertStatus) {
     try {

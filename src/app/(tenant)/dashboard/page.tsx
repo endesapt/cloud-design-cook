@@ -6,10 +6,12 @@ import { Activity, Cpu, HardDrive, MemoryStick } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/domain/metric-card";
+import { ResourceConsumptionPanel } from "@/components/domain/resource-consumption-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { LogoutButton } from "@/components/domain/logout-button";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/client/api";
+import { buildTenantResourceTrend, percent } from "@/lib/ui/resource-telemetry";
 
 type QuotaReport = {
   limits: { maxVms: number; maxVcpus: number; maxRamMb: number; maxDiskGb: number };
@@ -95,6 +97,51 @@ export default function DashboardPage() {
     ];
   }, [quota]);
 
+  const resourcePanel = useMemo(() => {
+    if (!quota) return null;
+
+    const cpuPct = percent(quota.usage.usedVcpus, quota.limits.maxVcpus);
+    const ramPct = percent(quota.usage.usedRamMb, quota.limits.maxRamMb);
+    const diskPct = percent(quota.usage.usedDiskGb, quota.limits.maxDiskGb);
+    const seed = [
+      quota.usage.usedVcpus,
+      quota.usage.usedRamMb,
+      quota.usage.usedDiskGb,
+      securityOverview?.lastEvaluatedAt ?? "na",
+    ].join(":");
+
+    return {
+      trendData: buildTenantResourceTrend({
+        seed: `tenant-dashboard:${seed}`,
+        current: {
+          cpuPct,
+          ramPct,
+          diskPct,
+        },
+      }),
+      resources: [
+        {
+          key: "cpuPct" as const,
+          label: "CPU",
+          valuePct: cpuPct,
+          detail: `${quota.usage.usedVcpus}/${quota.limits.maxVcpus} vCPU`,
+        },
+        {
+          key: "ramPct" as const,
+          label: "RAM",
+          valuePct: ramPct,
+          detail: `${quota.usage.usedRamMb}/${quota.limits.maxRamMb} MB`,
+        },
+        {
+          key: "diskPct" as const,
+          label: "Disk",
+          valuePct: diskPct,
+          detail: `${quota.usage.usedDiskGb}/${quota.limits.maxDiskGb} GB`,
+        },
+      ],
+    };
+  }, [quota, securityOverview?.lastEvaluatedAt]);
+
   return (
     <div>
       <PageHeader title="Tenant Dashboard" description="Live tenant quota and activity overview" right={<LogoutButton />} />
@@ -112,6 +159,18 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+
+      {resourcePanel ? (
+        <div className="mt-6">
+          <ResourceConsumptionPanel
+            title="Resource Consumption Trend"
+            description="CPU, RAM, and Disk utilization context for capacity decisions."
+            trendData={resourcePanel.trendData}
+            resources={resourcePanel.resources}
+            isMockHistory
+          />
+        </div>
+      ) : null}
 
       <Card className="mt-6">
         <CardHeader>
