@@ -1,10 +1,10 @@
 import { cn } from "@/lib/utils/cn";
 
 const styles: Record<string, string> = {
-  LOW: "bg-[#e5f7eb] text-[#14532d]",
-  MEDIUM: "bg-[#fff4d6] text-[#92400e]",
-  HIGH: "bg-[#ffe2d6] text-[#9a3412]",
-  CRITICAL: "bg-[#fee2e2] text-[#991b1b]",
+  LOW: "bg-[#052e1a] text-[#86efac]",
+  MEDIUM: "bg-[#3a2a02] text-[#fde047]",
+  HIGH: "bg-[#3f1d0a] text-[#fdba74]",
+  CRITICAL: "bg-[#3b1016] text-[#fca5a5]",
 };
 
 export function SecuritySeverityBadge({ severity }: { severity: string }) {

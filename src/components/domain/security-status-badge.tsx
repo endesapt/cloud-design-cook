@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils/cn";
 
 const styles: Record<string, string> = {
-  OPEN: "bg-[#fee2e2] text-[#991b1b]",
-  ACKNOWLEDGED: "bg-[#dbeafe] text-[#1d4ed8]",
-  RESOLVED: "bg-[#dcfce7] text-[#166534]",
+  OPEN: "bg-[#3b1016] text-[#fca5a5]",
+  ACKNOWLEDGED: "bg-[#10233d] text-[#93c5fd]",
+  RESOLVED: "bg-[#052e1a] text-[#86efac]",
 };
 
 export function SecurityStatusBadge({ status }: { status: string }) {

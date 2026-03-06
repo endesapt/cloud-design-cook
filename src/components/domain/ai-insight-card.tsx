@@ -10,7 +10,7 @@ export function AiInsightCard({
   confidence: number;
 }) {
   return (
-    <Card className="border-[--line-strong] bg-[linear-gradient(145deg,#fff,#fff6f6)]">
+    <Card className="border-[--line-strong] bg-[linear-gradient(145deg,#0f172a,#111827)]">
       <CardHeader>
         <CardTitle className="text-sm uppercase tracking-[0.1em] text-[--brand-red-strong]">AI Insight</CardTitle>
         <CardDescription className="font-semibold text-[--ink-1]">{title}</CardDescription>

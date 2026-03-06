@@ -22,7 +22,7 @@ export default function NewInstancePage() {
   const [groups, setGroups] = useState<SecurityGroupDto[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const selectClassName =
-    "h-10 w-full rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1] shadow-sm outline-none transition focus:border-[--brand-red] focus:ring-2 focus:ring-[--brand-red-soft]";
+    "h-10 w-full rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1] shadow-sm outline-none transition focus:border-[--brand-red] focus:ring-2 focus:ring-[--brand-red-soft]";
 
   useEffect(() => {
     void loadOptions();

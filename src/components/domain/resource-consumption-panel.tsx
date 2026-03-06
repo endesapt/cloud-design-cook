@@ -61,17 +61,25 @@ export function ResourceConsumptionPanel({
           <div className="h-72 rounded-xl border border-[--line] bg-[--surface-2] p-3">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#d8dfe8" />
-                <XAxis dataKey="label" tick={{ fill: "#4b5563", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="label" tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis
                   domain={[0, 100]}
                   tickFormatter={(value) => `${value}%`}
-                  tick={{ fill: "#4b5563", fontSize: 12 }}
+                  tick={{ fill: "#94a3b8", fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <ReferenceLine y={80} stroke="#f59e0b" strokeDasharray="4 4" />
-                <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#d8dfe8", fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 12,
+                    borderColor: "#3a4a63",
+                    backgroundColor: "#0b1220",
+                    color: "#f8fafc",
+                    fontSize: 12,
+                  }}
+                />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
                 {Object.entries(lineConfig).map(([key, config]) => (
                   <Line

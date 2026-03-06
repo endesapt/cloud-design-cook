@@ -188,7 +188,7 @@ export default function AdminUsersPage() {
             <select
               value={filterTenantId}
               onChange={(event) => setFilterTenantId(event.target.value)}
-              className="h-10 rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1]"
+              className="h-10 rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1]"
             >
               <option value="">All tenants</option>
               {tenants.map((tenant) => (
@@ -200,7 +200,7 @@ export default function AdminUsersPage() {
             <select
               value={filterRole}
               onChange={(event) => setFilterRole(event.target.value)}
-              className="h-10 rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1]"
+              className="h-10 rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1]"
             >
               <option value="">All roles</option>
               <option value="global_admin">global_admin</option>
@@ -232,7 +232,7 @@ export default function AdminUsersPage() {
               <select
                 value={role}
                 onChange={(event) => setRole(event.target.value as Role)}
-                className="h-10 rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1]"
+                className="h-10 rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1]"
               >
                 <option value="global_admin">global_admin</option>
                 <option value="support_viewer">support_viewer</option>
@@ -243,7 +243,7 @@ export default function AdminUsersPage() {
                 value={tenantId}
                 disabled={!roleNeedsTenant(role)}
                 onChange={(event) => setTenantId(event.target.value)}
-                className="h-10 rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1] disabled:bg-[--surface-2]"
+                className="h-10 rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1] disabled:bg-[--surface-2]"
               >
                 <option value="">No tenant</option>
                 {tenantOptions.map((tenant) => (
@@ -313,7 +313,7 @@ export default function AdminUsersPage() {
                             },
                           }))
                         }
-                        className="h-10 rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1] disabled:bg-[--surface-2]"
+                        className="h-10 rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1] disabled:bg-[--surface-2]"
                       >
                         <option value="global_admin">global_admin</option>
                         <option value="support_viewer">support_viewer</option>
@@ -332,7 +332,7 @@ export default function AdminUsersPage() {
                             },
                           }))
                         }
-                        className="h-10 rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1] disabled:bg-[--surface-2]"
+                        className="h-10 rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1] disabled:bg-[--surface-2]"
                       >
                         <option value="">No tenant</option>
                         {tenantOptions.map((tenant) => (

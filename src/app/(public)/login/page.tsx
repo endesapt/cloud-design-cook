@@ -43,8 +43,8 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="pointer-events-none absolute inset-0 bg-[conic-gradient(from_180deg_at_50%_50%,#fff1f2,#ffffff,#fff7ed,#fff1f2)] opacity-60" />
-      <Card className="relative z-10 w-full max-w-md border-[--line-strong] shadow-2xl shadow-red-100/80">
+      <div className="pointer-events-none absolute inset-0 bg-[conic-gradient(from_180deg_at_50%_50%,#111827,#0b1220,#1f2937,#111827)] opacity-60" />
+      <Card className="relative z-10 w-full max-w-md border-[--line-strong] shadow-2xl shadow-black/50">
         <CardHeader className="pb-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[--brand-red]">Cloud Console</p>
           <CardTitle className="text-3xl tracking-tight">Sign In</CardTitle>

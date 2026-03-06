@@ -4,10 +4,10 @@ type BadgeVariant = "neutral" | "success" | "warning" | "danger" | "info";
 
 const variantMap: Record<BadgeVariant, string> = {
   neutral: "bg-[--surface-2] text-[--ink-2]",
-  success: "bg-[#dcfce7] text-[#166534]",
-  warning: "bg-[#fef3c7] text-[#92400e]",
-  danger: "bg-[#fee2e2] text-[#b91c1c]",
-  info: "bg-[#dbeafe] text-[#1d4ed8]",
+  success: "bg-[#052e1a] text-[#86efac]",
+  warning: "bg-[#3a2a02] text-[#fde047]",
+  danger: "bg-[#3b1016] text-[#fca5a5]",
+  info: "bg-[#10233d] text-[#93c5fd]",
 };
 
 export function Badge({

@@ -2,21 +2,21 @@
 
 :root {
   --brand-red: #ba1220;
-  --brand-red-strong: #8f0c18;
-  --brand-red-soft: #ffd6db;
+  --brand-red-strong: #991b1b;
+  --brand-red-soft: #3b1418;
   --on-brand: #fffdfd;
-  --ink-1: #111827;
-  --ink-2: #374151;
-  --ink-3: #4b5563;
-  --surface-1: #ffffff;
-  --surface-2: #f7f9fc;
-  --surface-3: #e6eaf0;
-  --line: #d8dfe8;
-  --line-strong: #c6ced9;
+  --ink-1: #f8fafc;
+  --ink-2: #cbd5e1;
+  --ink-3: #94a3b8;
+  --surface-1: #0b1220;
+  --surface-2: #121a2b;
+  --surface-3: #1e293b;
+  --line: #2a3648;
+  --line-strong: #3a4a63;
   --state-safe: #16a34a;
-  --state-watch: #ca8a04;
-  --state-warning: #ea580c;
-  --state-critical: #dc2626;
+  --state-watch: #facc15;
+  --state-warning: #f59e0b;
+  --state-critical: #ef4444;
 }
 
 @theme inline {
@@ -35,9 +35,9 @@ body {
 
 body {
   background:
-    radial-gradient(circle at 12% -10%, #ffe4e6 0%, transparent 34%),
-    radial-gradient(circle at 88% 4%, #ffe5d4 0%, transparent 30%),
-    linear-gradient(180deg, #fafafa 0%, #f4f4f5 100%);
+    radial-gradient(circle at 12% -10%, #1f2937 0%, transparent 34%),
+    radial-gradient(circle at 88% 4%, #111827 0%, transparent 30%),
+    linear-gradient(180deg, #020617 0%, #0b1120 100%);
   color: var(--ink-1);
   font-family: var(--font-body), sans-serif;
 }

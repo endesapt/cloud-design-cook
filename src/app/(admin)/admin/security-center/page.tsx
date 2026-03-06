@@ -198,7 +198,7 @@ export default function AdminSecurityCenterPage() {
               </label>
               <select
                 id="tenantScope"
-                className="h-10 rounded-lg border border-[--line] bg-white px-3 text-sm"
+                className="h-10 rounded-lg border border-[--line] bg-[--surface-2] px-3 text-sm"
                 value={selectedTenantId ?? ""}
                 onChange={(event) => {
                   setSelectedTenantId(event.target.value || null);
@@ -222,7 +222,7 @@ export default function AdminSecurityCenterPage() {
       </div>
 
       {overview?.demo?.isFrozen ? (
-        <p className="mt-3 rounded-xl border border-[#fbcfe8] bg-[#fff1f2] px-3 py-2 text-xs font-semibold text-[#9f1239]">
+        <p className="mt-3 rounded-xl border border-[#6b1d2b] bg-[#2a1018] px-3 py-2 text-xs font-semibold text-[#fca5a5]">
           Demo snapshot frozen since {overview.demo.frozenAt ? new Date(overview.demo.frozenAt).toLocaleString() : "n/a"}.
           Use reset to rebuild signals.
         </p>

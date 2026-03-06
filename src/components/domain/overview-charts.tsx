@@ -28,7 +28,15 @@ export function StatusPie({ data }: { data: Array<{ name: string; value: number 
                       <Cell key={entry.name} fill={statusColorForInstanceStatus(entry.name)} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#d8dfe8", fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: 12,
+                      borderColor: "#3a4a63",
+                      backgroundColor: "#0b1220",
+                      color: "#f8fafc",
+                      fontSize: 12,
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -63,10 +71,18 @@ export function FlavorBar({ data }: { data: Array<{ name: string; value: number 
       <CardContent className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#d8dfe8" />
-            <XAxis dataKey="name" tick={{ fill: "#374151", fontSize: 12 }} />
-            <YAxis tick={{ fill: "#374151", fontSize: 12 }} />
-            <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#d8dfe8", fontSize: 12 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+            <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 12 }} />
+            <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} />
+            <Tooltip
+              contentStyle={{
+                borderRadius: 12,
+                borderColor: "#3a4a63",
+                backgroundColor: "#0b1220",
+                color: "#f8fafc",
+                fontSize: 12,
+              }}
+            />
             <Bar dataKey="value" radius={[8, 8, 0, 0]} fill="#dc2626" />
           </BarChart>
         </ResponsiveContainer>

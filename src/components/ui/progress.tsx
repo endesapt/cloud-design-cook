@@ -10,24 +10,47 @@ function toneForValue(value: number): ProgressTone {
 }
 
 const toneStyles: Record<ProgressTone, string> = {
-  safe: "bg-gradient-to-r from-[--state-safe] to-[#15803d]",
-  watch: "bg-gradient-to-r from-[--state-watch] to-[#a16207]",
-  warning: "bg-gradient-to-r from-[--state-warning] to-[#c2410c]",
-  critical: "bg-gradient-to-r from-[--state-critical] to-[#b91c1c]",
+  safe: "bg-[--state-safe]",
+  watch: "bg-[--state-watch]",
+  warning: "bg-[--state-warning]",
+  critical: "bg-[--state-critical]",
 };
 
 export function Progress({ value, className, tone }: { value: number; className?: string; tone?: ProgressTone }) {
   const safe = Math.max(0, Math.min(100, value));
   const resolvedTone = tone ?? toneForValue(safe);
+  const markerLeftPct = Math.min(98, Math.max(2, safe));
 
   return (
-    <div className={cn("h-2.5 w-full overflow-hidden rounded-full bg-[--surface-3] ring-1 ring-inset ring-[--line]", className)}>
+    <div
+      className={cn(
+        "relative h-3.5 w-full overflow-hidden rounded-full bg-[--surface-3] ring-1 ring-inset ring-[--line]",
+        className,
+      )}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(safe)}
+    >
+      {[20, 40, 60, 80].map((tick) => (
+        <span
+          key={tick}
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 w-px bg-[--line-strong]"
+          style={{ left: `${tick}%` }}
+        />
+      ))}
       <div
         className={cn(
           "h-full rounded-full shadow-[0_0_0_1px_rgba(17,24,39,0.08)] transition-all",
           toneStyles[resolvedTone],
         )}
         style={{ width: `${safe}%` }}
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 w-[2px] bg-[--ink-1]/35"
+        style={{ left: `${markerLeftPct}%` }}
       />
     </div>
   );

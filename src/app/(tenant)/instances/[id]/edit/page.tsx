@@ -149,7 +149,7 @@ export default function EditInstancePage() {
                   value={flavorId}
                   disabled={!canResize}
                   onChange={(event) => setFlavorId(event.target.value)}
-                  className="h-10 w-full rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1] disabled:bg-[--surface-2] disabled:text-[--ink-3]"
+                  className="h-10 w-full rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1] disabled:bg-[--surface-2] disabled:text-[--ink-3]"
                 >
                   {flavors.map((flavor) => (
                     <option key={flavor.id} value={flavor.id}>

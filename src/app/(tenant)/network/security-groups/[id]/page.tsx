@@ -221,7 +221,7 @@ export default function SecurityGroupDetailPage() {
             <CardContent className="space-y-4">
               <form className="grid gap-2 md:grid-cols-[9rem_8rem_7rem_7rem_1fr_auto]" onSubmit={createRule}>
                 <select
-                  className="h-10 rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1]"
+                  className="h-10 rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1]"
                   value={newRule.direction}
                   onChange={(e) => setNewRule((prev) => ({ ...prev, direction: e.target.value as RuleDraft["direction"] }))}
                 >
@@ -248,7 +248,7 @@ export default function SecurityGroupDetailPage() {
                         {editing ? (
                           <form className="grid gap-2 md:grid-cols-[9rem_8rem_7rem_7rem_1fr_auto_auto]" onSubmit={updateRule}>
                             <select
-                              className="h-9 rounded-lg border border-[--line] bg-white px-2.5 text-xs text-[--ink-1]"
+                              className="h-9 rounded-lg border border-[--line] bg-[--surface-2] px-2.5 text-xs text-[--ink-1]"
                               value={editRule.direction}
                               onChange={(e) =>
                                 setEditRule((prev) => ({ ...prev, direction: e.target.value as RuleDraft["direction"] }))

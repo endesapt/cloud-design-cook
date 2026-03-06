@@ -170,7 +170,7 @@ export default function TenantSecurityCenterPage() {
       )}
 
       {overview?.demo?.isFrozen ? (
-        <p className="mt-3 rounded-xl border border-[#fbcfe8] bg-[#fff1f2] px-3 py-2 text-xs font-semibold text-[#9f1239]">
+        <p className="mt-3 rounded-xl border border-[#6b1d2b] bg-[#2a1018] px-3 py-2 text-xs font-semibold text-[#fca5a5]">
           Demo snapshot frozen since {overview.demo.frozenAt ? new Date(overview.demo.frozenAt).toLocaleString() : "n/a"}.
           Auto-updates are disabled.
         </p>

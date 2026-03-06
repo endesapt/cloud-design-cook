@@ -183,7 +183,7 @@ export default function AdminTenantDetailPage() {
           </CardContent>
           </Card>
 
-          <Card className="mt-6 border-red-200">
+          <Card className="mt-6 border-[#6b1d2b]">
           <CardHeader>
             <CardTitle>Danger Zone</CardTitle>
           </CardHeader>
@@ -197,11 +197,11 @@ export default function AdminTenantDetailPage() {
               </Button>
             </div>
 
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-              <p className="text-sm font-medium text-red-900">
+            <div className="rounded-xl border border-[#6b1d2b] bg-[#2a1018] p-3">
+              <p className="text-sm font-medium text-[#fecaca]">
                 Force Delete Confirmation
               </p>
-              <p className="mt-1 text-xs text-red-800">Type slug: {tenant.slug}</p>
+              <p className="mt-1 text-xs text-[#fca5a5]">Type slug: {tenant.slug}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Input value={confirmInput} onChange={(event) => setConfirmInput(event.target.value)} placeholder={tenant.slug} />
                 <Button

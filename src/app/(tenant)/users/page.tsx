@@ -169,7 +169,7 @@ export default function TenantUsersPage() {
               <select
                 value={role}
                 onChange={(event) => setRole(event.target.value as "tenant_admin" | "tenant_user")}
-                className="h-10 rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1]"
+                className="h-10 rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1]"
               >
                 <option value="tenant_user">tenant_user</option>
                 <option value="tenant_admin">tenant_admin</option>
@@ -234,7 +234,7 @@ export default function TenantUsersPage() {
                             },
                           }))
                         }
-                        className="h-10 rounded-xl border border-[--line] bg-white px-3 text-sm text-[--ink-1] disabled:bg-[--surface-2]"
+                        className="h-10 rounded-xl border border-[--line] bg-[--surface-2] px-3 text-sm text-[--ink-1] disabled:bg-[--surface-2]"
                       >
                         <option value="tenant_user">tenant_user</option>
                         <option value="tenant_admin">tenant_admin</option>

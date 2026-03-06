@@ -5,7 +5,7 @@
 - Last Verified: 2026-03-06
 
 ## Visual Direction
-- Inspired by telecom cloud consoles: assertive red accents, neutral surfaces.
+- Inspired by telecom cloud consoles: assertive red accents, dark neutral surfaces.
 - Keep layout clean, enterprise-oriented, and demo-friendly.
 - Do not copy exact third-party brand assets.
 
@@ -20,6 +20,7 @@
 - Text hierarchy: `--ink-1..3`.
 - Borders: `--line`.
 - Quota status colors: `--state-safe`, `--state-watch`, `--state-warning`, `--state-critical`.
+- `watch` state should remain clearly yellow (not brown/amber-muted).
 
 ## Metric Semantics
 1. Use `counter` cards for unconstrained counts (alerts, tenants, instances).

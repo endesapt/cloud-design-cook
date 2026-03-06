@@ -27,9 +27,9 @@ export function NavShell({
       .sort((a, b) => b.href.length - a.href.length)[0]?.href ?? null;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#fff4f4,transparent_38%),linear-gradient(180deg,#fafafa,#f3f4f6)]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#1e293b,transparent_38%),linear-gradient(180deg,#020617,#0b1120)]">
       <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6 md:px-6">
-        <aside className="sticky top-6 hidden h-[calc(100vh-3rem)] w-72 rounded-2xl border border-[--line-strong] bg-white/95 p-5 shadow-[0_14px_40px_rgba(17,24,39,0.08)] backdrop-blur md:block">
+        <aside className="sticky top-6 hidden h-[calc(100vh-3rem)] w-72 rounded-2xl border border-[--line-strong] bg-[--surface-1]/95 p-5 shadow-[0_14px_40px_rgba(2,6,23,0.45)] backdrop-blur md:block">
           <div className="mb-7">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[--brand-red]">MTS Cloud Concept</p>
             <h1 className="mt-2 text-2xl font-bold text-[--ink-1]">{title}</h1>
